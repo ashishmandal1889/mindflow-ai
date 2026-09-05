@@ -491,85 +491,138 @@
   // 6. CHAT SUBMISSION & RESILIENT API COMMUNICATION
   // ==========================================================================
   async function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text) return;
+  const text = messageInput.value.trim();
+  if (!text) return;
 
-    // Guaranteed Input Retention: Don't clear input until network is acknowledged
-    messageInput.disabled = true;
-    sendBtn.disabled = true;
-
-    appendMessageUI("user", text);
-    currentChatHistory.push({ role: "user", text: text });
-    messageInput.value = "";
-    updateCharCounter();
-
-    // Loading indicator
-    const loadingBubble = document.createElement("div");
-    loadingBubble.className = "message-bubble assistant-message loading";
-    loadingBubble.innerHTML = `
-      <div class="bubble-avatar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L12 22L9.5 9.5L12 2Z"/></svg></div>
-      <div class="bubble-content"><div class="bubble-text">Reflecting with Gemini...</div></div>
-    `;
-    messagesContainer.appendChild(loadingBubble);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-    try {
-      const token = currentUser
-      ? await currentUser.getIdToken(true)
-      : null;
-
-      if (!token) {
-      throw new Error("Please sign in with Google before chatting.");
-      }
-      const storedKey = localStorage.getItem("gemini_api_key") || "";
-      const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-      if (storedKey) {
-        headers["x-gemini-api-key"] = storedKey;
-      }
-
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-          message: text,
-          history: currentChatHistory.slice(0, -1),
-          context: reflectionContextSelect.value,
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.message || data.error || `Server responded with status ${res.status}`);
-      }
-
-      loadingBubble.remove();
-
-      appendMessageUI("assistant", data.reply, data.model);
-      currentChatHistory.push({ role: "model", text: data.reply, model: data.model });
-
-      // Persist to user-isolated Firestore
-      await persistInteractionToFirestore(text, data.reply, data.model);
-
-      // Auto-trigger background analysis
-      triggerSmartAnalysis(text + "\n" + data.reply);
-    } catch (err) {
-      console.error("Message Error:", err);
-      loadingBubble.remove();
-      showToast(`Error: ${err.message}`, "error");
-      
-      const errorMsg = `⚠️ **Could not connect to Gemini service:** ${err.message}.<br><br>` +
-        `💡 *Click the **API Key** button in the top navigation bar or enter your key to activate live Gemini 3.6 Flash.*`;
-      appendMessageUI("assistant", errorMsg);
-    } finally {
-      messageInput.disabled = false;
-      sendBtn.disabled = false;
-      messageInput.focus();
-    }
+  if (!currentUser) {
+    showToast("Please sign in with Google before chatting.", "error");
+    return;
   }
 
+  // Disable only while the Gemini request is running
+  messageInput.disabled = true;
+  sendBtn.disabled = true;
+
+  appendMessageUI("user", text);
+  currentChatHistory.push({ role: "user", text: text });
+  messageInput.value = "";
+  updateCharCounter();
+
+  // Loading indicator
+  const loadingBubble = document.createElement("div");
+  loadingBubble.className = "message-bubble assistant-message loading";
+  loadingBubble.innerHTML = `
+    <div class="bubble-avatar">
+      <svg width="18" height="18" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/>
+      </svg>
+    </div>
+    <div class="bubble-content">
+      <div class="bubble-text">Reflecting with Gemini...</div>
+    </div>
+  `;
+
+  messagesContainer.appendChild(loadingBubble);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+  try {
+    // Get a fresh Firebase token
+    const token = await currentUser.getIdToken(true);
+
+    if (!token) {
+      throw new Error("Authentication token unavailable.");
+    }
+
+    const storedKey = localStorage.getItem("gemini_api_key") || "";
+
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    if (storedKey) {
+      headers["x-gemini-api-key"] = storedKey;
+    }
+
+    // Send only previous turns as history.
+    // The current user message is sent separately.
+    const historyForApi = currentChatHistory
+      .slice(0, -1)
+      .map((turn) => ({
+        role: turn.role,
+        text: turn.text,
+        model: turn.model,
+      }));
+
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        message: text,
+        history: historyForApi,
+        context: reflectionContextSelect.value,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(
+        data.message ||
+        data.error ||
+        `Server responded with status ${res.status}`
+      );
+    }
+
+    // Remove loading message
+    loadingBubble.remove();
+
+    // Add Gemini response
+    appendMessageUI("assistant", data.reply, data.model);
+
+    currentChatHistory.push({
+      role: "model",
+      text: data.reply,
+      model: data.model,
+    });
+
+    // IMPORTANT:
+    // Unlock the chat immediately after Gemini responds.
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
+
+    // Save Firestore in the background.
+    // Do NOT block the next chat message.
+    persistInteractionToFirestore(text, data.reply, data.model)
+      .catch((err) => {
+        console.warn("[Firestore] Background save failed:", err);
+      });
+
+    // Run analysis in the background as well.
+    triggerSmartAnalysis(text + "\n" + data.reply);
+
+  } catch (err) {
+    console.error("Message Error:", err);
+
+    loadingBubble.remove();
+
+    showToast(`Error: ${err.message}`, "error");
+
+    const errorMsg =
+      `⚠️ **Could not connect to Gemini service:** ${err.message}.<br><br>` +
+      `💡 *Please try sending your message again.*`;
+
+    appendMessageUI("assistant", errorMsg);
+
+  } finally {
+    // Always restore the input, even if Gemini fails
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messageInput.focus();
+  }
+}
   // ==========================================================================
   // 7. SMART ACTION ITEMS & EMOTIONAL CLARITY SUITE
   // ==========================================================================
