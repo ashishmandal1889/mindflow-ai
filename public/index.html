@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MindFlow AI — Intelligent Reflective Journal on Cloud Run</title>
+  <title>MindFlow AI — Get some clarity</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -11,12 +11,12 @@
   <!-- Firebase Web SDK Compat (Production CDN) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   
   <!-- Marked for Markdown Rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
-  <link rel="stylesheet" href="styles.css" />
+ <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <!-- Global App Header -->
@@ -36,14 +36,14 @@
       </div>
       <div>
         <h1 class="brand-title">MindFlow AI</h1>
-        <span class="brand-badge">Cloud Run • Firebase • Gemini 3.6</span>
+        <span class="brand-badge">Get some clarity</span>
       </div>
     </div>
 
     <div class="header-actions">
       <div class="cloud-status-pill" id="cloudStatusPill" title="Connected to Google Cloud Run">
         <span class="status-dot online"></span>
-        <span class="status-label">Cloud Run Active</span>
+        <span class="status-label">AI Active</span>
       </div>
 
       <!-- Settings / API Key Button -->
@@ -80,10 +80,10 @@
   <!-- Pre-Auth Landing / Welcome Hero -->
   <section id="landingHero" class="hero-section">
     <div class="hero-content">
-      <div class="hero-badge">Google Cloud Run AI Challenge Prototype</div>
+      <div class="hero-badge">Get some clarity</div>
       <h2 class="hero-title">Reflect with Clarity.<br><span class="gradient-text">Synthesize Action with Gemini.</span></h2>
       <p class="hero-subtitle">
-        An enterprise-secured, multi-turn AI journaling companion deployed on Google Cloud Run. 
+        An enterprise-secured, multi-turn AI journaling companion deployed on render. 
         Featuring user-isolated Firestore storage, Google Cloud Secret Manager integration, 
         and resilient model fallback ladders.
       </p>
@@ -114,37 +114,102 @@
   <!-- Authenticated Private Dashboard -->
   <main id="mainDashboard" class="dashboard-layout hidden">
     <!-- Left Sidebar: Isolated Firestore Entries History -->
-    <aside class="dashboard-sidebar">
-      <div class="sidebar-header">
-        <div class="sidebar-title-row">
-          <h3>Your Reflections</h3>
-          <button id="newEntryBtn" class="btn btn-secondary btn-sm" title="Start New Reflection Session">
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            New
-          </button>
-        </div>
-        <p class="sidebar-isolation-note">
-          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-          Firestore Path: <code>/users/{uid}/interactions</code>
-        </p>
-      </div>
+    <!-- ChatGPT-style MindFlow Conversation Sidebar -->
+<aside class="dashboard-sidebar" id="conversationSidebar">
 
-      <!-- History List -->
-      <div id="entriesList" class="entries-list">
-        <div class="entry-loading">Loading your encrypted reflections...</div>
-      </div>
+  <div class="mindflow-sidebar-top">
 
-      <!-- Storage Info Footer -->
-      <div class="sidebar-footer">
-        <div class="security-status-box">
-          <div class="sec-dot"></div>
-          <div>
-            <strong>Zero Insecure Defaults</strong>
-            <span>OWASP & Firestore Rules Active</span>
-          </div>
+    <div class="sidebar-brand-row">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">M</div>
+        <div>
+          <strong>MindFlow AI</strong>
+          <span>Personal Reflection</span>
         </div>
       </div>
-    </aside>
+
+      <button
+        id="sidebarToggleBtn"
+        class="sidebar-icon-btn"
+        title="Collapse sidebar"
+        aria-label="Collapse sidebar"
+      >
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 18l-6-6 6-6"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <button id="newEntryBtn" class="new-reflection-btn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4v16m8-8H4"
+        />
+      </svg>
+      <span>New Reflection</span>
+    </button>
+
+    <div class="conversation-search">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7"></circle>
+        <path d="M20 20l-4-4"></path>
+      </svg>
+
+      <input
+        id="conversationSearchInput"
+        type="text"
+        placeholder="Search reflections..."
+        autocomplete="off"
+      />
+    </div>
+
+  </div>
+
+  <div class="conversation-history">
+
+    <div class="conversation-section-title">
+      <span>Recent</span>
+    </div>
+
+    <div id="entriesList" class="entries-list">
+      <div class="entry-loading">
+        Loading your reflections...
+      </div>
+    </div>
+
+  </div>
+
+  <div class="mindflow-sidebar-footer">
+
+    <div class="privacy-indicator">
+      <div class="privacy-icon">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
+        </svg>
+      </div>
+
+      <div>
+        <strong>Private reflections</strong>
+        <span>Protected by Firebase</span>
+      </div>
+    </div>
+
+  </div>
+
+</aside>
 
     <!-- Center: Multi-turn Reflective Chat Studio -->
     <section class="chat-workspace">
