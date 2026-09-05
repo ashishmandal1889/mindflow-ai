@@ -1,0 +1,10 @@
+﻿rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Challenge Requirement: Strict User Data Isolation
+    // Each user can ONLY read and write documents inside their own user tree: /users/{userId}/...
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
