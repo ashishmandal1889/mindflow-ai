@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // Gemini LifePulse Client Application (Firebase + Cloud Run + Gemini 3.6 Flash)
 // ============================================================================
 
@@ -412,12 +412,18 @@
 
     try {
       const token = currentIdToken || (await currentUser?.getIdToken?.()) || "MOCK_TOKEN";
+      const storedKey = localStorage.getItem("gemini_api_key") || "";
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      };
+      if (storedKey) {
+        headers["x-gemini-api-key"] = storedKey;
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: headers,
         body: JSON.stringify({
           message: text,
           history: currentChatHistory.slice(0, -1),
@@ -425,12 +431,11 @@
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server responded with status ${res.status}`);
+        throw new Error(data.message || data.error || `Server responded with status ${res.status}`);
       }
 
-      const data = await res.json();
       loadingBubble.remove();
 
       appendMessageUI("assistant", data.reply, data.model);
@@ -444,8 +449,11 @@
     } catch (err) {
       console.error("Message Error:", err);
       loadingBubble.remove();
-      showToast(`Generation Error: ${err.message}`, "error");
-      appendMessageUI("assistant", `⚠️ *Could not connect to Gemini service:* ${err.message}. Please verify your API key configuration.`);
+      showToast(`Error: ${err.message}`, "error");
+      
+      const errorMsg = `⚠️ **Could not connect to Gemini service:** ${err.message}.<br><br>` +
+        `💡 *Click the **API Key** button in the top navigation bar or enter your key to activate live Gemini 3.6 Flash.*`;
+      appendMessageUI("assistant", errorMsg);
     } finally {
       messageInput.disabled = false;
       sendBtn.disabled = false;
@@ -460,10 +468,14 @@
     if (!fullText || fullText.length < 20) return;
     const token = currentIdToken || (await currentUser?.getIdToken?.()) || "MOCK_TOKEN";
 
+    const storedKey = localStorage.getItem("gemini_api_key") || "";
+    const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+    if (storedKey) headers["x-gemini-api-key"] = storedKey;
+
     // Analyze Sentiment & Clarity
     fetch("/api/analyze-sentiment", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: headers,
       body: JSON.stringify({ content: fullText }),
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -495,11 +507,14 @@
 
     const fullContent = currentChatHistory.map((c) => `${c.role}: ${c.text}`).join("\n\n");
     const token = currentIdToken || (await currentUser?.getIdToken?.()) || "MOCK_TOKEN";
+    const storedKey = localStorage.getItem("gemini_api_key") || "";
+    const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+    if (storedKey) headers["x-gemini-api-key"] = storedKey;
 
     try {
       const res = await fetch("/api/synthesize-actions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: headers,
         body: JSON.stringify({ content: fullContent }),
       });
 
@@ -678,6 +693,62 @@
       sendMessage();
     }
   });
+
+  // Config & API Key Modal Controls
+  const configModal = document.getElementById("configModal");
+  const openApiKeyModalBtn = document.getElementById("openApiKeyModalBtn");
+  const closeConfigModalBtn = document.getElementById("closeConfigModalBtn");
+  const cancelConfigBtn = document.getElementById("cancelConfigBtn");
+  const saveConfigBtn = document.getElementById("saveConfigBtn");
+  const geminiApiKeyInput = document.getElementById("geminiApiKeyInput");
+  const firebaseConfigInput = document.getElementById("firebaseConfigInput");
+
+  function openConfigModal() {
+    if (geminiApiKeyInput) {
+      geminiApiKeyInput.value = localStorage.getItem("gemini_api_key") || "";
+    }
+    if (configModal) configModal.classList.remove("hidden");
+  }
+
+  function closeConfigModal() {
+    if (configModal) configModal.classList.add("hidden");
+  }
+
+  window.openApiKeyModal = openConfigModal;
+
+  if (openApiKeyModalBtn) openApiKeyModalBtn.addEventListener("click", openConfigModal);
+  if (closeConfigModalBtn) closeConfigModalBtn.addEventListener("click", closeConfigModal);
+  if (cancelConfigBtn) cancelConfigBtn.addEventListener("click", closeConfigModal);
+
+  if (saveConfigBtn) {
+    saveConfigBtn.addEventListener("click", async () => {
+      const apiKeyVal = geminiApiKeyInput ? geminiApiKeyInput.value.trim() : "";
+      if (apiKeyVal) {
+        localStorage.setItem("gemini_api_key", apiKeyVal);
+        fetch("/api/set-key", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: apiKeyVal }),
+        }).catch(() => {});
+        showToast("Gemini API key saved & applied!", "success");
+      }
+
+      const fbVal = firebaseConfigInput ? firebaseConfigInput.value.trim() : "";
+      if (fbVal) {
+        try {
+          const cfg = JSON.parse(fbVal);
+          localStorage.setItem("custom_firebase_config", JSON.stringify(cfg));
+          showToast("Firebase configuration saved! Reloading...", "success");
+          setTimeout(() => window.location.reload(), 1000);
+        } catch (e) {
+          showToast("Invalid JSON for Firebase config", "error");
+          return;
+        }
+      }
+
+      closeConfigModal();
+    });
+  }
 
   // Boot Application
   initializeFirebase();
