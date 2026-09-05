@@ -15,7 +15,7 @@ Follow these quick steps to push your project to GitHub and deploy it live to Go
    ```bash
    git init
    git add .
-   git commit -m "feat: initial Gemini LifePulse prototype with Cloud Run & Firebase"
+   git commit -m "feat: initial MindFlow AI prototype with Cloud Run & Firebase"
    ```
 
 3. Create a public repository on GitHub (e.g., `gemini-lifepulse`):

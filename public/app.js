@@ -1,5 +1,5 @@
 // ============================================================================
-// Gemini LifePulse Client Application (Firebase + Cloud Run + Gemini 3.6 Flash)
+// MindFlow AI Studio Client Application (Firebase + Cloud Run + Gemini 3.6 Flash)
 // ============================================================================
 
 (function () {
@@ -20,7 +20,7 @@
   const mainDashboard = document.getElementById("mainDashboard");
   const signInBtn = document.getElementById("signInBtn");
   const heroSignInBtn = document.getElementById("heroSignInBtn");
-  const devBypassBtn = document.getElementById("devBypassBtn");
+  const authErrorMessage = document.getElementById("authErrorMessage");
   const signOutBtn = document.getElementById("signOutBtn");
   const userProfile = document.getElementById("userProfile");
   const userAvatar = document.getElementById("userAvatar");
@@ -78,25 +78,57 @@
   // ==========================================================================
   async function initializeFirebase() {
     try {
-      // Fetch safe client config from server
-      const res = await fetch("/api/config");
-      const data = await res.json();
-      const config = data.firebaseConfig;
+      // 1. Fetch Firebase config from server environment (.env / Cloud Run)
+      let config = null;
+      try {
+        const res = await fetch("/api/config");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.firebaseConfig && data.firebaseConfig.apiKey) {
+            config = data.firebaseConfig;
+          }
+        }
+      } catch (cfgErr) {
+        console.warn("[Firebase] Could not fetch server config:", cfgErr.message);
+      }
 
-      // Check if valid Firebase project is provided
-      if (config && config.projectId && config.apiKey) {
+      // 2. Client fallback: Check custom config stored in localStorage
+      if (!config || !config.apiKey) {
+        const localCfgStr = localStorage.getItem("custom_firebase_config");
+        if (localCfgStr) {
+          try {
+            const parsed = JSON.parse(localCfgStr);
+            if (parsed && parsed.apiKey) {
+              config = parsed;
+              console.log("[Firebase] Using locally stored Firebase configuration.");
+            }
+          } catch (e) {}
+        }
+      }
+
+      // 3. Initialize Firebase SDK if valid configuration exists
+      if (config && config.apiKey && (config.projectId || config.authDomain)) {
         if (!firebase.apps.length) {
           firebase.initializeApp(config);
         }
         auth = firebase.auth();
         db = firebase.firestore();
 
+        // Ensure session persists across browser page reloads
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((persErr) => {
+          console.warn("[Firebase Auth] Persistence setup:", persErr.message);
+        });
+
         // Listen for authentication changes
         auth.onAuthStateChanged(async (user) => {
           if (user) {
             currentUser = user;
-            currentIdToken = await user.getIdToken();
-            renderAuthenticatedState();
+            try {
+              currentIdToken = await user.getIdToken();
+            } catch (tErr) {
+              console.warn("Could not retrieve ID token:", tErr);
+            }
+            renderAuthenticatedState(user);
             bindFirestoreHistoryListener(user.uid);
           } else {
             currentUser = null;
@@ -104,75 +136,141 @@
             renderUnauthenticatedState();
           }
         });
-        console.log("[Firebase] Client SDK initialized successfully.");
+        console.log("[Firebase] Client SDK initialized successfully with project:", config.projectId || config.authDomain);
       } else {
-        console.warn("[Firebase] No client config returned from backend. Demo guest mode active.");
+        console.info("[Firebase] Firebase Authentication configuration not found. Real Google Sign-In will prompt for configuration.");
+        auth = null;
+        db = null;
+        renderUnauthenticatedState();
       }
     } catch (err) {
       console.warn("[Firebase Init Warning]:", err.message);
+      auth = null;
+      db = null;
+      renderUnauthenticatedState();
     }
   }
 
   // Google Sign-In Popup
   async function handleGoogleSignIn() {
+    clearAuthError();
+
+    // If Firebase is not configured, show clear error and guidance
     if (!auth) {
-      // Fallback demo mode if Firebase credentials are not yet wired
-      enableDemoUser("Demo User", "demo-cloudrun-user-" + Math.floor(Math.random() * 1000));
+      const msg = "Firebase Authentication is not yet configured.<br><br>" +
+        "Please provide your Firebase Web Configuration in <code>.env</code> (FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, FIREBASE_PROJECT_ID) " +
+        "or click the <strong>API Key</strong> button in the top navigation to paste your Firebase config JSON.";
+      showAuthError("Firebase Configuration Required", msg);
+      showToast("Firebase Authentication is not configured.", "error");
       return;
     }
 
     try {
+      if (heroSignInBtn) heroSignInBtn.disabled = true;
+      if (signInBtn) signInBtn.disabled = true;
+
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.addScope("profile");
       provider.addScope("email");
+      provider.setCustomParameters({ prompt: "select_account" });
+
       const result = await auth.signInWithPopup(provider);
       currentUser = result.user;
       currentIdToken = await currentUser.getIdToken();
+      clearAuthError();
       showToast(`Signed in as ${currentUser.displayName || currentUser.email}`, "success");
     } catch (err) {
       console.error("Auth Popup Error:", err);
-      showToast(`Sign in error: ${err.message}`, "error");
+      handleFirebaseAuthError(err);
+    } finally {
+      if (heroSignInBtn) heroSignInBtn.disabled = false;
+      if (signInBtn) signInBtn.disabled = false;
+    }
+  }
+
+  function handleFirebaseAuthError(err) {
+    let title = "Authentication Failed";
+    let detail = err.message || "An unknown authentication error occurred.";
+
+    if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
+      title = "Sign-In Cancelled";
+      detail = "The Google Sign-In popup was closed before completing authentication.";
+    } else if (err.code === "auth/unauthorized-domain") {
+      title = "Unauthorized Domain";
+      detail = "The domain <code>localhost</code> is not authorized for OAuth in your Firebase project.<br>" +
+        "<strong>To Fix:</strong> Go to <a href='https://console.firebase.google.com' target='_blank' style='color:#38bdf8'>Firebase Console</a> &rarr; <strong>Authentication</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Authorized domains</strong> &rarr; Add <code>localhost</code>.";
+    } else if (err.code === "auth/operation-not-allowed") {
+      title = "Google Sign-In Disabled";
+      detail = "The Google Sign-In provider is disabled in Firebase.<br>" +
+        "<strong>To Fix:</strong> Go to <a href='https://console.firebase.google.com' target='_blank' style='color:#38bdf8'>Firebase Console</a> &rarr; <strong>Authentication</strong> &rarr; <strong>Sign-in method</strong> &rarr; Enable <strong>Google</strong>.";
+    } else if (err.code === "auth/configuration-not-found" || err.code === "auth/invalid-api-key") {
+      title = "Invalid Firebase Configuration";
+      detail = "The Firebase API Key or Project ID is invalid. Please check your configuration.";
+    } else if (err.code === "auth/popup-blocked") {
+      title = "Popup Blocked";
+      detail = "The browser blocked the sign-in popup. Please allow popups for localhost:8080 and try again.";
+    }
+
+    showAuthError(title, detail);
+    showToast(title, "error");
+  }
+
+  function showAuthError(title, detail) {
+    if (authErrorMessage) {
+      authErrorMessage.innerHTML = `<strong>${title}</strong>${detail}`;
+      authErrorMessage.classList.remove("hidden");
+    }
+  }
+
+  function clearAuthError() {
+    if (authErrorMessage) {
+      authErrorMessage.innerHTML = "";
+      authErrorMessage.classList.add("hidden");
     }
   }
 
   // Sign Out
   async function handleSignOut() {
     if (auth) {
-      await auth.signOut();
+      try {
+        await auth.signOut();
+      } catch (e) {
+        console.warn("SignOut warning:", e);
+      }
     }
     currentUser = null;
     currentIdToken = null;
+    activeSessionId = null;
+    currentChatHistory = [];
     renderUnauthenticatedState();
-    showToast("Signed out successfully.");
-  }
-
-  // Demo User Mode (Ensures zero blocker for live testing)
-  function enableDemoUser(name = "Demo CloudRun User", uid = "demo-user-101") {
-    currentUser = {
-      uid: uid,
-      displayName: name,
-      email: "test.participant@cloudrun-challenge.dev",
-      photoURL: "https://lh3.googleusercontent.com/a/default-user=s96-c",
-      getIdToken: async () => "MOCK_DEVELOPER_TOKEN_" + uid,
-    };
-    currentIdToken = "MOCK_DEVELOPER_TOKEN_" + uid;
-    renderAuthenticatedState();
-    loadLocalSessionStorage(uid);
-    showToast(`Exploring in Demo Mode (User ID: ${uid.substring(0, 10)}...)`, "info");
+    entriesList.innerHTML = `<div class="entry-loading">Please sign in to view your reflections.</div>`;
+    messagesContainer.innerHTML = "";
+    showToast("Signed out successfully.", "info");
   }
 
   // ==========================================================================
   // 3. UI STATE TRANSITIONS
   // ==========================================================================
-  function renderAuthenticatedState() {
+  function renderAuthenticatedState(user) {
     landingHero.classList.add("hidden");
     mainDashboard.classList.remove("hidden");
     signInBtn.classList.add("hidden");
     userProfile.classList.remove("hidden");
 
-    userName.textContent = currentUser.displayName || "Active Explorer";
-    userUidSnippet.textContent = `UID: ${currentUser.uid.substring(0, 8)}...`;
-    userAvatar.src = currentUser.photoURL || "https://lh3.googleusercontent.com/a/default-user=s96-c";
+    const displayName = (user && user.displayName) || (user && user.email) || "Authenticated User";
+    userName.textContent = displayName;
+    
+    // Show real Firebase UID
+    if (user && user.uid) {
+      const shortUid = user.uid.length > 14 ? `${user.uid.substring(0, 10)}...` : user.uid;
+      userUidSnippet.textContent = `UID: ${shortUid}`;
+      userUidSnippet.title = `Full Firebase UID: ${user.uid}`;
+    } else {
+      userUidSnippet.textContent = "";
+    }
+
+    userAvatar.src = (user && user.photoURL) || "https://lh3.googleusercontent.com/a/default-user=s96-c";
+    clearAuthError();
 
     if (!activeSessionId) {
       startNewSession();
@@ -184,14 +282,19 @@
     mainDashboard.classList.add("hidden");
     signInBtn.classList.remove("hidden");
     userProfile.classList.add("hidden");
+
+    userName.textContent = "";
+    userUidSnippet.textContent = "";
+    userUidSnippet.title = "";
+    userAvatar.src = "";
   }
 
   // ==========================================================================
   // 4. USER-ISOLATED FIRESTORE PERSISTENCE (/users/{uid}/interactions)
   // ==========================================================================
   function bindFirestoreHistoryListener(userId) {
-    if (!db) {
-      loadLocalSessionStorage(userId);
+    if (!db || !userId) {
+      entriesList.innerHTML = `<div class="entry-loading">Firestore database not connected.</div>`;
       return;
     }
 
@@ -411,7 +514,13 @@
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
     try {
-      const token = currentIdToken || (await currentUser?.getIdToken?.()) || "MOCK_TOKEN";
+      const token = currentUser
+      ? await currentUser.getIdToken(true)
+      : null;
+
+      if (!token) {
+      throw new Error("Please sign in with Google before chatting.");
+      }
       const storedKey = localStorage.getItem("gemini_api_key") || "";
       const headers = {
         "Content-Type": "application/json",
@@ -625,12 +734,12 @@
       return;
     }
 
-    let md = `# Gemini LifePulse Reflection\n\n`;
+    let md = `# MindFlow AI Studio Reflection\n\n`;
     md += `**Date:** ${new Date().toLocaleString()}\n`;
     md += `**Focus:** ${reflectionContextSelect.value}\n\n---\n\n`;
 
     currentChatHistory.forEach((turn) => {
-      const speaker = turn.role === "user" ? "### 👤 You" : `### ✨ Gemini (${turn.model || "Flash"})`;
+      const speaker = turn.role === "user" ? "### 👤 You" : `### ✨ MindFlow AI Studio (${turn.model || "Flash"})`;
       md += `${speaker}\n\n${turn.text}\n\n`;
     });
 
@@ -638,7 +747,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `lifepulse-reflection-${Date.now()}.md`;
+    a.download = `mindflow-reflection-${Date.now()}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -675,7 +784,7 @@
   // Buttons & Inputs
   signInBtn.addEventListener("click", handleGoogleSignIn);
   heroSignInBtn.addEventListener("click", handleGoogleSignIn);
-  devBypassBtn.addEventListener("click", () => enableDemoUser());
+  
   signOutBtn.addEventListener("click", handleSignOut);
   newEntryBtn.addEventListener("click", startNewSession);
   sendBtn.addEventListener("click", sendMessage);

@@ -1,5 +1,5 @@
-﻿/* ==========================================================================
-   Gemini LifePulse Modern Theme (Linear / Material 3 Aesthetic)
+/* ==========================================================================
+   MindFlow AI Studio Modern Theme (Linear / Material 3 Aesthetic)
    ========================================================================== */
 
 :root {
@@ -96,6 +96,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.brand-logo {
+  display: none !important;
 }
 
 .brand-title {
@@ -971,4 +974,26 @@ body {
   gap: 12px;
   margin-top: 16px;
   justify-content: flex-end;
+}
+
+/* Auth Error Banner */
+.auth-error-banner {
+  margin-top: 24px;
+  max-width: 580px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  background-color: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: #fda4af;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.auth-error-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #fff;
 }

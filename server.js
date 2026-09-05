@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -105,27 +105,25 @@ try {
   console.warn(`[Firebase Admin Warning]: ${err.message}`);
 }
 
-// Resilient Token Verification Middleware
+// Production Firebase Token Verification Middleware
 async function authenticateFirebaseUser(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    req.user = { uid: "guest-user", email: "guest@lifepulse.dev", name: "Guest User" };
-    return next();
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: "Authentication required. Please sign in with Google via Firebase.",
+    });
   }
 
   const idToken = authHeader.split("Bearer ")[1].trim();
-
-  // 1. Handle mock/demo tokens seamlessly in local testing
-  if (idToken.startsWith("MOCK_") || idToken.startsWith("demo_") || idToken.startsWith("dev_") || idToken === "MOCK_TOKEN") {
-    req.user = {
-      uid: idToken.replace("MOCK_DEVELOPER_TOKEN_", "") || "demo-user-101",
-      email: "demo@cloudrun-challenge.dev",
-      name: "Demo Explorer",
-    };
-    return next();
+  if (!idToken) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: "Empty authentication token provided.",
+    });
   }
 
-  // 2. If Firebase Admin is verified with GCP project credentials, verify live JWT
+  // 1. If Firebase Admin is initialized with credentials, verify cryptographically
   if (firebaseAdminActive) {
     try {
       const decodedToken = await admin.auth().verifyIdToken(idToken);
@@ -137,41 +135,49 @@ async function authenticateFirebaseUser(req, res, next) {
       return next();
     } catch (authError) {
       console.warn("[Auth Warning] Firebase token verification failed:", authError.message);
-      // If it fails due to local env lack of project credentials, fallback gracefully to token payload decode
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Invalid or expired Firebase authentication token.",
+        details: authError.message,
+      });
     }
   }
 
-  // 3. Fallback: decode standard JWT payload (user ID & email) safely
+  // 2. In local development before service account is configured,
+  // decode the standard Firebase Google JWT payload safely to extract real user UID
   try {
     const parts = idToken.split(".");
     if (parts.length === 3) {
       const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
-      req.user = {
-        uid: payload.user_id || payload.sub || "user-session",
-        email: payload.email || "",
-        name: payload.name || "Explorer",
-      };
-      return next();
+      const uid = payload.user_id || payload.sub;
+      if (uid && typeof uid === "string") {
+        req.user = {
+          uid: uid,
+          email: payload.email || "",
+          name: payload.name || payload.email?.split("@")[0] || "User",
+        };
+        return next();
+      }
     }
   } catch (e) {
-    // Ignore decode errors
+    // decode error handled below
   }
 
-  // Default fallback user context
-  req.user = { uid: "user-session-" + Date.now().toString(36), email: "user@lifepulse.dev", name: "Explorer" };
-  return next();
+  return res.status(401).json({
+    error: "Unauthorized",
+    message: "Invalid token payload. Please sign in with Google.",
+  });
 }
 
 // ============================================================================
 // 4. GEMINI MODEL RESILIENCE & FALLBACK PROTOCOL
 // ============================================================================
 const FALLBACK_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-2.5-pro",
-];
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.7-flash",
+];;
 
 const RECOVERABLE_STATUS_CODES = [404, 429, 500, 503];
 
@@ -264,7 +270,7 @@ app.get("/api/config", (req, res) => {
       appId: process.env.FIREBASE_APP_ID || "",
     },
     appInfo: {
-      title: "Gemini LifePulse Studio",
+      title: "MindFlow AI Studio",
       challengeTrack: "Ideathon Challenge",
       hasServerApiKey: Boolean(cachedApiKey || process.env.GEMINI_API_KEY),
     },
@@ -295,7 +301,7 @@ app.post("/api/chat", authenticateFirebaseUser, async (req, res) => {
       return res.status(400).json({ error: "Validation Error", message: "Message cannot be empty." });
     }
 
-    const systemInstruction = `You are Gemini LifePulse, an empathetic, intellectually rigorous AI journaling companion and executive thought partner.
+    const systemInstruction = `You are MindFlow AI Studio, an empathetic, intellectually rigorous AI journaling companion and executive thought partner.
 Your objectives:
 1. Listen deeply to the user's reflection, prompt, or life situation.
 2. Provide a clear, thoughtful, structured response with empathetic validation, insightful questions, and objective clarity.
@@ -453,7 +459,7 @@ app.get("*", (req, res) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`=======================================================`);
-  console.log(`🚀 Gemini LifePulse Server running on http://localhost:${PORT}`);
+  console.log(`🚀 MindFlow AI Studio Server running on http://localhost:${PORT}`);
   console.log(`🏷️  Cloud Run Label: dev-tutorial=cloud-run-ai-challenge`);
   console.log(`🔐 Port: ${PORT}`);
   console.log(`=======================================================`);
