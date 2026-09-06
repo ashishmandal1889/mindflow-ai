@@ -2732,3 +2732,156 @@ button {
 body.sidebar-open {
   overflow: hidden;
 }
+/* Keep the mobile message composer above the browser viewport edge */
+@media (max-width: 600px) {
+  .chat-workspace {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .messages-container {
+    padding-bottom: 190px;
+  }
+
+  .quick-prompts-bar {
+    position: relative;
+    z-index: 50;
+  }
+
+  .input-container {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: auto;
+
+    z-index: 1000;
+
+    padding:
+      8px
+      10px
+      calc(10px + env(safe-area-inset-bottom));
+
+    background: var(--bg-surface);
+
+    border-top: 1px solid var(--border-subtle);
+
+    box-sizing: border-box;
+  }
+
+  .input-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 8px;
+
+    box-sizing: border-box;
+  }
+
+  .input-card textarea {
+    display: block;
+
+    width: 100%;
+    height: 44px;
+    min-height: 44px;
+    max-height: 70px;
+
+    overflow-y: auto;
+
+    box-sizing: border-box;
+  }
+
+  .input-card-bottom {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    margin-top: 6px;
+    padding-top: 6px;
+
+    gap: 6px;
+
+    box-sizing: border-box;
+  }
+
+  .input-tools {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .send-action-group {
+    display: flex;
+    align-items: center;
+
+    flex: 0 0 auto;
+
+    min-width: 0;
+  }
+
+  #sendBtn {
+    display: inline-flex !important;
+
+    align-items: center;
+    justify-content: center;
+
+    width: auto !important;
+    min-width: 72px !important;
+
+    height: 40px !important;
+    min-height: 40px !important;
+
+    padding: 6px 12px !important;
+
+    visibility: visible !important;
+    opacity: 1 !important;
+
+    position: relative;
+    z-index: 1001;
+
+    flex-shrink: 0;
+
+    white-space: nowrap;
+
+    box-sizing: border-box;
+  }
+}
+
+/* Keep the composer compact on very small phones */
+@media (max-width: 380px) {
+  .messages-container {
+    padding-bottom: 180px;
+  }
+
+  .input-container {
+    padding:
+      6px
+      8px
+      calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .input-card {
+    padding: 7px;
+  }
+
+  .input-card textarea {
+    height: 40px;
+    min-height: 40px;
+    max-height: 60px;
+  }
+
+  .input-card-bottom {
+    margin-top: 5px;
+    padding-top: 5px;
+  }
+
+  #sendBtn {
+    min-width: 66px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 5px 9px !important;
+  }
+}
