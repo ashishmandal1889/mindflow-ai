@@ -1226,11 +1226,16 @@ button {
   align-items: center;
 
   flex-shrink: 0;
+
+  min-width: 0;
 }
 
 /* Keep send button visible on all screen sizes */
 #sendBtn {
   display: inline-flex !important;
+
+  align-items: center;
+  justify-content: center;
 
   visibility: visible !important;
 
@@ -1240,7 +1245,9 @@ button {
 
   position: relative;
 
-  z-index: 10;
+  z-index: 20;
+
+  white-space: nowrap;
 }
 
 /* Right sidebar */
@@ -2149,15 +2156,29 @@ button {
   .input-container {
     width: 100%;
 
-    padding: 10px 12px 12px;
+    padding: 8px 12px 10px;
+
+    box-sizing: border-box;
   }
 
   .input-card {
     width: 100%;
+
+    box-sizing: border-box;
   }
 
   .input-card-bottom {
+    width: 100%;
+
     gap: 6px;
+
+    box-sizing: border-box;
+  }
+
+  .send-action-group {
+    flex-shrink: 0;
+
+    min-width: 0;
   }
 
   .entry-delete-btn {
@@ -2402,36 +2423,78 @@ button {
     padding: 6px 10px;
   }
 
+  /* Keep the mobile composer inside the viewport */
   .input-container {
     width: 100%;
 
-    padding: 8px 10px 10px;
+    flex-shrink: 0;
+
+    padding:
+      6px
+      10px
+      calc(8px + env(safe-area-inset-bottom));
+
+    box-sizing: border-box;
   }
 
   .input-card {
     width: 100%;
 
-    padding: 9px;
+    padding: 8px;
+
+    box-sizing: border-box;
   }
 
   .input-card textarea {
     width: 100%;
 
-    min-height: 42px;
+    min-width: 0;
 
-    max-height: 140px;
+    height: 46px;
 
-    font-size: 0.85rem;
+    min-height: 46px;
+
+    max-height: 72px;
+
+    overflow-y: auto;
+
+    resize: none;
+
+    font-size: 0.84rem;
+
+    line-height: 1.4;
+
+    box-sizing: border-box;
   }
 
   .input-card-bottom {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
     gap: 6px;
+
+    margin-top: 6px;
+
+    padding-top: 6px;
+
+    box-sizing: border-box;
   }
 
   .input-tools {
+    display: flex;
+
+    align-items: center;
+
     gap: 5px;
 
     min-width: 0;
+
+    flex: 1;
   }
 
   .tool-btn {
@@ -2444,20 +2507,40 @@ button {
     font-size: 0.65rem;
   }
 
+  .send-action-group {
+    display: flex;
+
+    align-items: center;
+
+    flex-shrink: 0;
+
+    min-width: 0;
+  }
+
   #sendBtn {
-    min-height: 40px;
-
-    padding: 7px 12px;
-
     display: inline-flex !important;
+
+    align-items: center;
+
+    justify-content: center;
 
     visibility: visible !important;
 
     opacity: 1 !important;
 
+    flex-shrink: 0;
+
     position: relative;
 
     z-index: 20;
+
+    min-height: 40px;
+
+    height: 40px;
+
+    padding: 6px 12px;
+
+    white-space: nowrap;
   }
 
   .hero-section {
@@ -2506,6 +2589,26 @@ button {
     left: 12px;
 
     max-width: none;
+  }
+
+  .composer,
+  .message-composer,
+  .input-area,
+  .chat-input-area {
+    width: 100%;
+
+    box-sizing: border-box;
+  }
+
+  .composer button,
+  .message-composer button,
+  .input-area button,
+  .chat-input-area button {
+    flex-shrink: 0;
+  }
+
+  textarea {
+    min-width: 0;
   }
 }
 
@@ -2570,7 +2673,32 @@ button {
   }
 
   .input-container {
-    padding: 6px 8px 8px;
+    padding:
+      5px
+      8px
+      calc(7px + env(safe-area-inset-bottom));
+  }
+
+  .input-card {
+    padding: 7px;
+  }
+
+  .input-card textarea {
+    height: 42px;
+
+    min-height: 42px;
+
+    max-height: 64px;
+
+    font-size: 0.8rem;
+  }
+
+  .input-card-bottom {
+    gap: 5px;
+
+    margin-top: 5px;
+
+    padding-top: 5px;
   }
 
   .tool-btn {
@@ -2592,50 +2720,15 @@ button {
   }
 
   #sendBtn {
-    padding: 7px 10px;
+    padding: 6px 10px;
 
     min-height: 38px;
+
+    height: 38px;
   }
 }
 
 /* Mobile sidebar state */
 body.sidebar-open {
   overflow: hidden;
-}
-
-/* Keep the message composer usable on mobile screens */
-@media (max-width: 600px) {
-  .composer,
-  .message-composer,
-  .input-area,
-  .chat-input-area {
-    width: 100%;
-
-    box-sizing: border-box;
-  }
-
-  .composer button,
-  .message-composer button,
-  .input-area button,
-  .chat-input-area button {
-    flex-shrink: 0;
-  }
-
-  #sendBtn {
-    display: inline-flex !important;
-
-    visibility: visible !important;
-
-    opacity: 1 !important;
-
-    flex-shrink: 0;
-
-    position: relative;
-
-    z-index: 20;
-  }
-
-  textarea {
-    min-width: 0;
-  }
 }
