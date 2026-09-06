@@ -100,11 +100,11 @@
   const sessionTimestamp =
     document.getElementById("sessionTimestamp");
 
-  const toast =
-    document.getElementById("toast");
-
   /* Show a temporary notification */
   function showToast(message, type = "info") {
+    const toast =
+      document.getElementById("toast");
+
     if (!toast) {
       return;
     }
@@ -131,10 +131,9 @@
           const data =
             await response.json();
 
-          if (
-            data?.firebaseConfig?.apiKey
-          ) {
-            config = data.firebaseConfig;
+          if (data?.firebaseConfig?.apiKey) {
+            config =
+              data.firebaseConfig;
           }
         }
       } catch (error) {
@@ -273,7 +272,8 @@
           provider
         );
 
-      currentUser = result.user;
+      currentUser =
+        result.user;
 
       clearAuthError();
 
@@ -291,21 +291,26 @@
         error
       );
 
-      handleFirebaseAuthError(error);
+      handleFirebaseAuthError(
+        error
+      );
     } finally {
       if (heroSignInBtn) {
-        heroSignInBtn.disabled = false;
+        heroSignInBtn.disabled =
+          false;
       }
 
       if (signInBtn) {
-        signInBtn.disabled = false;
+        signInBtn.disabled =
+          false;
       }
     }
   }
 
   /* Convert Firebase authentication errors into user-friendly messages */
   function handleFirebaseAuthError(error) {
-    let title = "Authentication Failed";
+    let title =
+      "Authentication Failed";
 
     let detail =
       error?.message ||
@@ -317,7 +322,8 @@
       error?.code ===
         "auth/cancelled-popup-request"
     ) {
-      title = "Sign-In Cancelled";
+      title =
+        "Sign-In Cancelled";
 
       detail =
         "The Google Sign-In popup was closed before authentication completed.";
@@ -325,7 +331,8 @@
       error?.code ===
       "auth/unauthorized-domain"
     ) {
-      title = "Unauthorized Domain";
+      title =
+        "Unauthorized Domain";
 
       detail =
         `This domain (${window.location.hostname}) is not authorized in Firebase.`;
@@ -333,7 +340,8 @@
       error?.code ===
       "auth/operation-not-allowed"
     ) {
-      title = "Google Sign-In Disabled";
+      title =
+        "Google Sign-In Disabled";
 
       detail =
         "Google Sign-In is not enabled in your Firebase Authentication settings.";
@@ -352,18 +360,29 @@
       error?.code ===
       "auth/popup-blocked"
     ) {
-      title = "Popup Blocked";
+      title =
+        "Popup Blocked";
 
       detail =
         "Your browser blocked the Google Sign-In popup. Allow popups and try again.";
     }
 
-    showAuthError(title, detail);
-    showToast(title, "error");
+    showAuthError(
+      title,
+      detail
+    );
+
+    showToast(
+      title,
+      "error"
+    );
   }
 
   /* Display an authentication error */
-  function showAuthError(title, detail) {
+  function showAuthError(
+    title,
+    detail
+  ) {
     if (!authErrorMessage) {
       return;
     }
@@ -371,7 +390,9 @@
     authErrorMessage.innerHTML =
       `<strong>${escapeHtml(
         title
-      )}</strong> ${escapeHtml(detail)}`;
+      )}</strong> ${escapeHtml(
+        detail
+      )}`;
 
     authErrorMessage.classList.remove(
       "hidden"
@@ -385,6 +406,7 @@
     }
 
     authErrorMessage.innerHTML = "";
+
     authErrorMessage.classList.add(
       "hidden"
     );
@@ -427,11 +449,28 @@
   }
 
   /* Display the authenticated dashboard */
-  function renderAuthenticatedState(user) {
-    landingHero?.classList.add("hidden");
-    mainDashboard?.classList.remove("hidden");
-    signInBtn?.classList.add("hidden");
-    userProfile?.classList.remove("hidden");
+  function renderAuthenticatedState(
+    user
+  ) {
+    landingHero?.classList.add(
+      "hidden"
+    );
+
+    mainDashboard?.classList.remove(
+      "hidden"
+    );
+
+    signInBtn?.classList.add(
+      "hidden"
+    );
+
+    heroSignInBtn?.classList.add(
+      "hidden"
+    );
+
+    userProfile?.classList.remove(
+      "hidden"
+    );
 
     const displayName =
       user?.displayName ||
@@ -489,6 +528,10 @@
       "hidden"
     );
 
+    heroSignInBtn?.classList.remove(
+      "hidden"
+    );
+
     userProfile?.classList.add(
       "hidden"
     );
@@ -498,7 +541,9 @@
     }
 
     if (userUidSnippet) {
-      userUidSnippet.textContent = "";
+      userUidSnippet.textContent =
+        "";
+
       userUidSnippet.title = "";
     }
 
@@ -599,7 +644,10 @@
   async function bindFirestoreHistoryListener(
     userId
   ) {
-    if (!userId || !currentUser) {
+    if (
+      !userId ||
+      !currentUser
+    ) {
       if (entriesList) {
         entriesList.innerHTML = `
           <div class="entry-loading">
@@ -694,7 +742,10 @@
     docId,
     data
   ) {
-    if (!entriesList || !docId) {
+    if (
+      !entriesList ||
+      !docId
+    ) {
       return;
     }
 
@@ -718,8 +769,8 @@
         let date;
 
         if (
-          typeof data.updatedAt
-            ?.toDate === "function"
+          typeof data.updatedAt?.toDate ===
+          "function"
         ) {
           date =
             data.updatedAt.toDate();
@@ -820,56 +871,118 @@
       }
     );
 
-    entriesList.appendChild(item);
-  }
-
-  /* Delete a saved reflection */
-  /* Delete a saved reflection */
-async function deleteReflection(docId) {
-  if (!currentUser || !docId) {
-    showToast(
-      "Please sign in before deleting a reflection.",
-      "error"
+    entriesList.appendChild(
+      item
     );
-    return;
   }
 
-  const confirmed = window.confirm(
-    "Delete this reflection?\n\nThis cannot be undone."
-  );
+  /* Delete a saved reflection */
+  async function deleteReflection(
+    docId
+  ) {
+    if (
+      !currentUser ||
+      !docId
+    ) {
+      showToast(
+        "Please sign in before deleting a reflection.",
+        "error"
+      );
 
-  if (!confirmed) {
-    return;
-  }
+      return;
+    }
 
-  const entryElement = document.getElementById(
-    `entry-${docId}`
-  );
+    const confirmed =
+      window.confirm(
+        "Delete this reflection?\n\nThis cannot be undone."
+      );
 
-  const deleteButton = entryElement?.querySelector(
-    ".entry-delete-btn"
-  );
+    if (!confirmed) {
+      return;
+    }
 
-  if (deleteButton) {
-    deleteButton.disabled = true;
-  }
+    const entryElement =
+      document.getElementById(
+        `entry-${docId}`
+      );
 
-  try {
-    const response = await authenticatedFetch(
-      `/api/interactions/${encodeURIComponent(docId)}`,
-      {
-        method: "DELETE",
+    const deleteButton =
+      entryElement?.querySelector(
+        ".entry-delete-btn"
+      );
+
+    if (deleteButton) {
+      deleteButton.disabled = true;
+    }
+
+    try {
+      const response =
+        await authenticatedFetch(
+          `/api/interactions/${encodeURIComponent(
+            docId
+          )}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+      if (response.status === 404) {
+        removeLocalReflection(
+          docId
+        );
+
+        entryElement?.remove();
+
+        if (
+          entriesList &&
+          !entriesList.querySelector(
+            ".entry-item"
+          )
+        ) {
+          entriesList.innerHTML = `
+            <div class="entry-loading">
+              No saved reflections yet.
+            </div>
+          `;
+        }
+
+        if (
+          activeSessionId ===
+          docId
+        ) {
+          startNewSession();
+        }
+
+        showToast(
+          "Reflection deleted successfully.",
+          "success"
+        );
+
+        return;
       }
-    );
 
-    if (response.status === 404) {
-      removeLocalReflection(docId);
+      await parseApiResponse(
+        response
+      );
+
+      removeLocalReflection(
+        docId
+      );
 
       entryElement?.remove();
 
       if (
+        activeSessionId ===
+        docId
+      ) {
+        startNewSession();
+      }
+
+      if (
         entriesList &&
-        !entriesList.querySelector(".entry-item")
+        !entriesList.querySelector(
+          ".entry-item"
+        )
       ) {
         entriesList.innerHTML = `
           <div class="entry-loading">
@@ -878,59 +991,30 @@ async function deleteReflection(docId) {
         `;
       }
 
-      if (activeSessionId === docId) {
-        startNewSession();
-      }
-
       showToast(
         "Reflection deleted successfully.",
         "success"
       );
+    } catch (error) {
+      console.error(
+        "[History] Delete reflection failed:",
+        error
+      );
 
-      return;
+      if (deleteButton) {
+        deleteButton.disabled =
+          false;
+      }
+
+      showToast(
+        getUserFriendlyApiError(
+          error
+        ),
+        "error"
+      );
     }
-
-    await parseApiResponse(response);
-
-    removeLocalReflection(docId);
-
-    entryElement?.remove();
-
-    if (activeSessionId === docId) {
-      startNewSession();
-    }
-
-    if (
-      entriesList &&
-      !entriesList.querySelector(".entry-item")
-    ) {
-      entriesList.innerHTML = `
-        <div class="entry-loading">
-          No saved reflections yet.
-        </div>
-      `;
-    }
-
-    showToast(
-      "Reflection deleted successfully.",
-      "success"
-    );
-  } catch (error) {
-    console.error(
-      "[History] Delete reflection failed:",
-      error
-    );
-
-    if (deleteButton) {
-      deleteButton.disabled = false;
-    }
-
-    showToast(
-      getUserFriendlyApiError(error),
-      "error"
-    );
   }
-}
+
   /* Save a reflection to local storage */
   function saveToLocalStorage(
     userId,
@@ -983,6 +1067,49 @@ async function deleteReflection(docId) {
       key,
       JSON.stringify(saved)
     );
+  }
+
+  /* Load locally cached reflections */
+  function loadLocalSessionStorage(
+    userId
+  ) {
+    if (
+      !userId ||
+      !entriesList
+    ) {
+      return;
+    }
+
+    const key =
+      `mindflow_${userId}`;
+
+    try {
+      const saved =
+        JSON.parse(
+          localStorage.getItem(
+            key
+          ) || "[]"
+        );
+
+      if (!Array.isArray(saved)) {
+        return;
+      }
+
+      saved.forEach(
+        (item) => {
+          if (item?.id) {
+            renderHistoryEntryItem(
+              item.id,
+              item
+            );
+          }
+        }
+      );
+    } catch (error) {
+      console.warn(
+        "[LocalStorage] Could not load reflections."
+      );
+    }
   }
 
   /* Remove one locally cached reflection */
@@ -1042,8 +1169,7 @@ async function deleteReflection(docId) {
 
     const payload = {
       id: activeSessionId,
-      sessionId:
-        activeSessionId,
+      sessionId: activeSessionId,
 
       title:
         currentChatHistory[0]?.text?.substring(
@@ -1076,7 +1202,9 @@ async function deleteReflection(docId) {
                 "application/json",
             },
             body:
-              JSON.stringify(payload),
+              JSON.stringify(
+                payload
+              ),
           }
         );
 
@@ -1235,8 +1363,8 @@ async function deleteReflection(docId) {
         let date;
 
         if (
-          typeof data.updatedAt
-            ?.toDate === "function"
+          typeof data.updatedAt?.toDate ===
+          "function"
         ) {
           date =
             data.updatedAt.toDate();
@@ -1430,6 +1558,7 @@ async function deleteReflection(docId) {
               isUser
                 ? escapeHtml(
                     currentUser?.displayName ||
+                      currentUser?.email ||
                       "You"
                   )
                 : "MindFlow AI"
@@ -1488,7 +1617,7 @@ async function deleteReflection(docId) {
 
     if (!currentUser) {
       showToast(
-        "Please sign in with Google before chatting.",
+        "Please sign in before chatting.",
         "error"
       );
 
@@ -1660,7 +1789,7 @@ async function deleteReflection(docId) {
 
       appendMessageUI(
         "assistant",
-        "⚠️ **I couldn't complete that response.**\n\nPlease try sending your message again."
+        "I couldn't complete that response.\n\nPlease try sending your message again."
       );
     } finally {
       messageInput.disabled =
@@ -1858,7 +1987,7 @@ async function deleteReflection(docId) {
           false;
 
         synthesizeActionsBtn.textContent =
-          "⚡ Synthesize";
+          "Synthesize";
       }
     }
   }
@@ -2119,8 +2248,8 @@ async function deleteReflection(docId) {
       (turn) => {
         const speaker =
           turn.role === "user"
-            ? "### 👤 You"
-            : "### ✨ MindFlow AI";
+            ? "### You"
+            : "### MindFlow AI";
 
         markdown +=
           `${speaker}\n\n${
@@ -2368,6 +2497,7 @@ async function deleteReflection(docId) {
     return "Could not connect to the AI service. Please try again.";
   }
 
+  /* Connect Google authentication */
   signInBtn?.addEventListener(
     "click",
     handleGoogleSignIn
@@ -2378,26 +2508,31 @@ async function deleteReflection(docId) {
     handleGoogleSignIn
   );
 
+  /* Connect sign out */
   signOutBtn?.addEventListener(
     "click",
     handleSignOut
   );
 
+  /* Start a new reflection */
   newEntryBtn?.addEventListener(
     "click",
     startNewSession
   );
 
+  /* Send a reflection */
   sendBtn?.addEventListener(
     "click",
     sendMessage
   );
 
+  /* Generate SMART actions */
   synthesizeActionsBtn?.addEventListener(
     "click",
     synthesizeActionItems
   );
 
+  /* Analyze the current reflection */
   analyzeToneBtn?.addEventListener(
     "click",
     () => {
@@ -2415,16 +2550,19 @@ async function deleteReflection(docId) {
     }
   );
 
+  /* Export the current reflection */
   exportMdBtn?.addEventListener(
     "click",
     exportMarkdown
   );
 
+  /* Update character count */
   messageInput?.addEventListener(
     "input",
     updateCharCounter
   );
 
+  /* Send the message with Enter */
   messageInput?.addEventListener(
     "keydown",
     (event) => {
@@ -2556,11 +2694,13 @@ async function deleteReflection(docId) {
     }
   );
 
+  /* Initialize frontend controls */
   initializeFirebase();
   setupVoiceDictation();
   updateCharCounter();
 })();
 
+/* Initialize mobile sidebar controls */
 document.addEventListener(
   "DOMContentLoaded",
   () => {
@@ -2651,8 +2791,17 @@ document.addEventListener(
     conversationSidebar?.addEventListener(
       "click",
       (event) => {
+        const target =
+          event.target;
+
+        if (
+          !(target instanceof Element)
+        ) {
+          return;
+        }
+
         const clickedElement =
-          event.target.closest(
+          target.closest(
             "button, a, .conversation-entry, .entry-item"
           );
 

@@ -73,6 +73,8 @@ button {
     #a855f7 50%,
     #f43f5e 100%
   );
+
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -646,6 +648,7 @@ button {
 
 .conversation-history .entry-item.active {
   background: rgba(56, 189, 248, 0.09);
+
   border-color: rgba(56, 189, 248, 0.16);
 }
 
@@ -895,6 +898,7 @@ button {
   gap: 18px;
 
   overscroll-behavior: contain;
+
   -webkit-overflow-scrolling: touch;
 }
 
@@ -1118,6 +1122,8 @@ button {
   outline: none;
 
   line-height: 1.5;
+
+  min-width: 0;
 }
 
 .input-card textarea::placeholder {
@@ -1136,6 +1142,8 @@ button {
   padding-top: 8px;
 
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+  gap: 8px;
 }
 
 .input-tools {
@@ -1144,6 +1152,8 @@ button {
   align-items: center;
 
   gap: 12px;
+
+  min-width: 0;
 }
 
 .tool-btn {
@@ -1160,6 +1170,7 @@ button {
   border-radius: var(--radius-sm);
 
   display: flex;
+
   align-items: center;
 
   gap: 6px;
@@ -1167,6 +1178,8 @@ button {
   cursor: pointer;
 
   transition: all 0.15s ease;
+
+  flex-shrink: 0;
 }
 
 .tool-btn:hover {
@@ -1203,6 +1216,31 @@ button {
   font-size: 0.72rem;
 
   color: var(--text-muted);
+
+  white-space: nowrap;
+}
+
+.send-action-group {
+  display: flex;
+
+  align-items: center;
+
+  flex-shrink: 0;
+}
+
+/* Keep send button visible on all screen sizes */
+#sendBtn {
+  display: inline-flex !important;
+
+  visibility: visible !important;
+
+  opacity: 1 !important;
+
+  flex-shrink: 0;
+
+  position: relative;
+
+  z-index: 10;
 }
 
 /* Right sidebar */
@@ -1223,6 +1261,7 @@ button {
   overflow-x: hidden;
 
   display: flex;
+
   flex-direction: column;
 
   gap: 20px;
@@ -1246,6 +1285,8 @@ button {
   justify-content: space-between;
 
   margin-bottom: 8px;
+
+  gap: 8px;
 }
 
 .card-header h4 {
@@ -1292,6 +1333,8 @@ button {
   justify-content: space-between;
 
   margin-bottom: 4px;
+
+  gap: 6px;
 }
 
 .action-tag {
@@ -1343,6 +1386,7 @@ button {
 
 .score-dial {
   width: 72px;
+
   height: 72px;
 
   border-radius: 50%;
@@ -1353,9 +1397,11 @@ button {
   );
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
+
   justify-content: center;
 
   position: relative;
@@ -1369,6 +1415,7 @@ button {
   position: absolute;
 
   width: 58px;
+
   height: 58px;
 
   border-radius: 50%;
@@ -1492,7 +1539,9 @@ button {
 /* Delete button */
 .entry-delete-btn {
   width: 32px !important;
+
   min-width: 32px !important;
+
   height: 32px !important;
 
   flex: 0 0 32px;
@@ -1500,9 +1549,11 @@ button {
   display: flex !important;
 
   align-items: center;
+
   justify-content: center;
 
   padding: 0 !important;
+
   margin: 0 !important;
 
   border: 1px solid transparent !important;
@@ -1516,6 +1567,7 @@ button {
   cursor: pointer;
 
   opacity: 1 !important;
+
   visibility: visible !important;
 
   position: relative;
@@ -1552,6 +1604,7 @@ button {
   display: block !important;
 
   width: 15px !important;
+
   height: 15px !important;
 
   pointer-events: none;
@@ -1562,7 +1615,10 @@ button {
   position: fixed;
 
   bottom: 24px;
+
   right: 24px;
+
+  max-width: min(380px, calc(100vw - 32px));
 
   background-color: var(--bg-surface-elevated);
 
@@ -1576,7 +1632,7 @@ button {
 
   font-size: 0.85rem;
 
-  z-index: 3000;
+  z-index: 7000;
 }
 
 .toast.error {
@@ -1591,7 +1647,7 @@ button {
   color: #6ee7b7;
 }
 
-/* Modal */
+/* General modal backdrop */
 .modal-backdrop {
   position: fixed;
 
@@ -1604,9 +1660,14 @@ button {
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   z-index: 4000;
+
+  padding: 20px;
+
+  overflow-y: auto;
 }
 
 .modal-card {
@@ -1633,6 +1694,8 @@ button {
   justify-content: space-between;
 
   margin-bottom: 12px;
+
+  gap: 12px;
 }
 
 .btn-close {
@@ -1702,6 +1765,7 @@ button {
   max-width: 580px;
 
   margin-left: auto;
+
   margin-right: auto;
 
   padding: 14px 18px;
@@ -1732,19 +1796,22 @@ button {
 /* Scrollbars */
 .dashboard-sidebar::-webkit-scrollbar,
 .dashboard-analytics::-webkit-scrollbar,
-.messages-container::-webkit-scrollbar {
+.messages-container::-webkit-scrollbar,
+.conversation-history::-webkit-scrollbar {
   width: 6px;
 }
 
 .dashboard-sidebar::-webkit-scrollbar-track,
 .dashboard-analytics::-webkit-scrollbar-track,
-.messages-container::-webkit-scrollbar-track {
+.messages-container::-webkit-scrollbar-track,
+.conversation-history::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .dashboard-sidebar::-webkit-scrollbar-thumb,
 .dashboard-analytics::-webkit-scrollbar-thumb,
-.messages-container::-webkit-scrollbar-thumb {
+.messages-container::-webkit-scrollbar-thumb,
+.conversation-history::-webkit-scrollbar-thumb {
   background: #263247;
 
   border-radius: 999px;
@@ -1752,7 +1819,8 @@ button {
 
 .dashboard-sidebar::-webkit-scrollbar-thumb:hover,
 .dashboard-analytics::-webkit-scrollbar-thumb:hover,
-.messages-container::-webkit-scrollbar-thumb:hover {
+.messages-container::-webkit-scrollbar-thumb:hover,
+.conversation-history::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
 
@@ -1866,6 +1934,7 @@ button {
 
   .dashboard-sidebar {
     width: 240px;
+
     min-width: 240px;
   }
 
@@ -1878,6 +1947,7 @@ button {
 @media (max-width: 900px) {
   .app-header {
     height: 64px;
+
     min-height: 64px;
 
     padding: 0 14px;
@@ -1941,10 +2011,13 @@ button {
     position: fixed;
 
     top: 0;
+
     left: 0;
+
     bottom: 0;
 
     width: 280px;
+
     min-width: 280px;
 
     height: 100dvh;
@@ -1954,6 +2027,7 @@ button {
     background: rgba(10, 16, 28, 0.98);
 
     overflow-y: auto;
+
     overflow-x: hidden;
 
     transform: translateX(-100%);
@@ -1988,6 +2062,7 @@ button {
     width: 100%;
 
     height: 56px;
+
     min-height: 56px;
 
     padding: 0 14px;
@@ -2013,6 +2088,7 @@ button {
     width: 100%;
 
     min-width: 0;
+
     min-height: 0;
 
     padding: 14px;
@@ -2020,6 +2096,7 @@ button {
     gap: 12px;
 
     overflow-x: hidden;
+
     overflow-y: auto;
   }
 
@@ -2035,6 +2112,7 @@ button {
 
   .bubble-avatar {
     width: 28px;
+
     height: 28px;
 
     min-width: 28px;
@@ -2056,6 +2134,7 @@ button {
     padding: 8px 12px;
 
     overflow-x: auto;
+
     overflow-y: hidden;
 
     white-space: nowrap;
@@ -2077,12 +2156,19 @@ button {
     width: 100%;
   }
 
+  .input-card-bottom {
+    gap: 6px;
+  }
+
   .entry-delete-btn {
     width: 34px !important;
+
     min-width: 34px !important;
+
     height: 34px !important;
 
     opacity: 1 !important;
+
     visibility: visible !important;
   }
 
@@ -2131,11 +2217,13 @@ button {
 
   .user-avatar {
     width: 30px;
+
     height: 30px;
   }
 
   .mobile-menu-btn {
     width: 36px;
+
     height: 36px;
 
     font-size: 20px;
@@ -2261,6 +2349,7 @@ button {
 
   .bubble-avatar {
     width: 28px;
+
     height: 28px;
 
     min-width: 28px;
@@ -2355,6 +2444,22 @@ button {
     font-size: 0.65rem;
   }
 
+  #sendBtn {
+    min-height: 40px;
+
+    padding: 7px 12px;
+
+    display: inline-flex !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    position: relative;
+
+    z-index: 20;
+  }
+
   .hero-section {
     padding: 40px 18px;
   }
@@ -2383,11 +2488,24 @@ button {
 
   .entry-delete-btn {
     width: 34px !important;
+
     min-width: 34px !important;
+
     height: 34px !important;
 
     opacity: 1 !important;
+
     visibility: visible !important;
+  }
+
+  .toast {
+    bottom: 12px;
+
+    right: 12px;
+
+    left: 12px;
+
+    max-width: none;
   }
 }
 
@@ -2407,6 +2525,7 @@ button {
 
   .mobile-menu-btn {
     width: 34px;
+
     height: 34px;
 
     font-size: 18px;
@@ -2422,6 +2541,7 @@ button {
 
   .user-avatar {
     width: 32px;
+
     height: 32px;
   }
 
@@ -2465,12 +2585,57 @@ button {
 
   .entry-delete-btn {
     width: 32px !important;
+
     min-width: 32px !important;
+
     height: 32px !important;
+  }
+
+  #sendBtn {
+    padding: 7px 10px;
+
+    min-height: 38px;
   }
 }
 
 /* Mobile sidebar state */
 body.sidebar-open {
   overflow: hidden;
+}
+
+/* Keep the message composer usable on mobile screens */
+@media (max-width: 600px) {
+  .composer,
+  .message-composer,
+  .input-area,
+  .chat-input-area {
+    width: 100%;
+
+    box-sizing: border-box;
+  }
+
+  .composer button,
+  .message-composer button,
+  .input-area button,
+  .chat-input-area button {
+    flex-shrink: 0;
+  }
+
+  #sendBtn {
+    display: inline-flex !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    flex-shrink: 0;
+
+    position: relative;
+
+    z-index: 20;
+  }
+
+  textarea {
+    min-width: 0;
+  }
 }

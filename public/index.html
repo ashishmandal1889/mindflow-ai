@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -10,6 +11,7 @@
   <title>MindFlow AI — Get some clarity</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+
   <link
     rel="preconnect"
     href="https://fonts.gstatic.com"
@@ -34,7 +36,7 @@
 
 <body>
 
-  <!-- Global App Header -->
+  <!-- Global application header -->
   <header class="app-header">
 
     <div class="header-brand">
@@ -71,23 +73,22 @@
               y2="22"
               gradientUnits="userSpaceOnUse"
             >
-              <stop stop-color="#4285F4" />
-              <stop
-                offset="0.5"
-                stop-color="#9B72CF"
-              />
-              <stop
-                offset="1"
-                stop-color="#D96570"
-              />
+              <stop offset="0" stop-color="#4285F4" />
+              <stop offset="0.5" stop-color="#9B72CF" />
+              <stop offset="1" stop-color="#D96570" />
             </linearGradient>
           </defs>
         </svg>
       </div>
 
       <div>
-        <h1 class="brand-title">MindFlow AI</h1>
-        <span class="brand-badge">Get some clarity</span>
+        <h1 class="brand-title">
+          MindFlow AI
+        </h1>
+
+        <span class="brand-badge">
+          Get some clarity
+        </span>
       </div>
 
     </div>
@@ -101,7 +102,10 @@
         title="MindFlow AI backend connection"
       >
         <span class="status-dot online"></span>
-        <span class="status-label">AI Active</span>
+
+        <span class="status-label">
+          AI Active
+        </span>
       </div>
 
       <!-- Firebase configuration -->
@@ -126,15 +130,21 @@
           />
         </svg>
 
-        <span>Settings</span>
+        <span>
+          Settings
+        </span>
       </button>
 
-      <!-- Authentication controls -->
-      <div id="authContainer">
+      <!-- Google authentication and user profile -->
+      <div
+        id="authContainer"
+        class="auth-container"
+      >
 
+        <!-- Google sign in -->
         <button
           id="signInBtn"
-          class="btn btn-primary btn-sm"
+          class="btn btn-primary btn-sm google-header-btn"
           type="button"
         >
           <svg
@@ -167,10 +177,12 @@
           Sign In with Google
         </button>
 
+        <!-- Authenticated user profile -->
         <div
           id="userProfile"
           class="user-profile hidden"
         >
+
           <img
             id="userAvatar"
             class="user-avatar"
@@ -179,6 +191,7 @@
           />
 
           <div class="user-meta">
+
             <span
               id="userName"
               class="user-name"
@@ -188,8 +201,10 @@
               id="userUidSnippet"
               class="user-uid"
             ></span>
+
           </div>
 
+          <!-- Sign out -->
           <button
             id="signOutBtn"
             class="btn btn-ghost btn-sm"
@@ -211,14 +226,17 @@
               />
             </svg>
           </button>
+
         </div>
 
       </div>
+
     </div>
+
   </header>
 
 
-  <!-- Pre-Authentication Landing -->
+  <!-- Pre-authentication landing page -->
   <section
     id="landingHero"
     class="hero-section"
@@ -233,7 +251,6 @@
       <h2 class="hero-title">
         Reflect with Clarity.
         <br />
-
         <span class="gradient-text">
           Synthesize Action with Gemini.
         </span>
@@ -271,11 +288,13 @@
 
       <div class="hero-cta-group">
 
+        <!-- Google sign in -->
         <button
           id="heroSignInBtn"
           class="btn btn-primary btn-lg"
           type="button"
         >
+
           <svg
             width="20"
             height="20"
@@ -304,6 +323,7 @@
           </svg>
 
           Sign In with Google
+
         </button>
 
       </div>
@@ -314,16 +334,17 @@
       ></div>
 
     </div>
+
   </section>
 
 
-  <!-- Authenticated Private Dashboard -->
+  <!-- Authenticated private dashboard -->
   <main
     id="mainDashboard"
     class="dashboard-layout hidden"
   >
 
-    <!-- User-Isolated Reflection History -->
+    <!-- User-isolated reflection history -->
     <aside
       class="dashboard-sidebar"
       id="conversationSidebar"
@@ -339,7 +360,6 @@
         ×
       </button>
 
-
       <div class="mindflow-sidebar-top">
 
         <div class="sidebar-brand-row">
@@ -351,12 +371,16 @@
             </div>
 
             <div>
-              <strong>MindFlow AI</strong>
-              <span>Personal Reflection</span>
+              <strong>
+                MindFlow AI
+              </strong>
+
+              <span>
+                Personal Reflection
+              </span>
             </div>
 
           </div>
-
 
           <!-- Collapse desktop sidebar -->
           <button
@@ -366,6 +390,7 @@
             aria-label="Collapse sidebar"
             type="button"
           >
+
             <svg
               width="18"
               height="18"
@@ -380,17 +405,18 @@
                 d="M15 18l-6-6 6-6"
               />
             </svg>
+
           </button>
 
         </div>
 
-
-        <!-- Create new reflection -->
+        <!-- Create a new reflection -->
         <button
           id="newEntryBtn"
           class="new-reflection-btn"
           type="button"
         >
+
           <svg
             width="18"
             height="18"
@@ -406,9 +432,11 @@
             />
           </svg>
 
-          <span>New Reflection</span>
-        </button>
+          <span>
+            New Reflection
+          </span>
 
+        </button>
 
         <!-- Search reflection history -->
         <div class="conversation-search">
@@ -426,7 +454,10 @@
               r="7"
             ></circle>
 
-            <path d="M20 20l-4-4"></path>
+            <path
+              d="M20 20l-4-4"
+            ></path>
+
           </svg>
 
           <input
@@ -440,25 +471,27 @@
 
       </div>
 
-
       <!-- Reflection history -->
       <div class="conversation-history">
 
         <div class="conversation-section-title">
-          <span>Recent</span>
+          <span>
+            Recent
+          </span>
         </div>
 
         <div
           id="entriesList"
           class="entries-list"
         >
+
           <div class="entry-loading">
             Loading your reflections...
           </div>
+
         </div>
 
       </div>
-
 
       <!-- Privacy indicator -->
       <div class="mindflow-sidebar-footer">
@@ -466,6 +499,7 @@
         <div class="privacy-indicator">
 
           <div class="privacy-icon">
+
             <svg
               width="15"
               height="15"
@@ -480,11 +514,17 @@
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
+
           </div>
 
           <div>
-            <strong>Private reflections</strong>
-            <span>Protected by Firebase</span>
+            <strong>
+              Private reflections
+            </strong>
+
+            <span>
+              Protected by Firebase
+            </span>
           </div>
 
         </div>
@@ -494,7 +534,7 @@
     </aside>
 
 
-    <!-- Center Chat Workspace -->
+    <!-- Center chat workspace -->
     <section class="chat-workspace">
 
       <!-- Session header -->
@@ -515,7 +555,6 @@
 
         </div>
 
-
         <div class="workspace-controls">
 
           <!-- Reflection context -->
@@ -524,6 +563,7 @@
             class="select-sm"
             title="Set AI Persona Context"
           >
+
             <option value="General Reflection">
               General Reflection
             </option>
@@ -543,8 +583,8 @@
             <option value="Gratitude & Wins">
               Gratitude & Wins
             </option>
-          </select>
 
+          </select>
 
           <!-- Export reflection -->
           <button
@@ -553,6 +593,7 @@
             title="Export current reflection as Markdown"
             type="button"
           >
+
             <svg
               width="16"
               height="16"
@@ -569,6 +610,7 @@
             </svg>
 
             Export
+
           </button>
 
         </div>
@@ -586,6 +628,7 @@
         <div class="message-bubble assistant-message">
 
           <div class="bubble-avatar">
+
             <svg
               width="18"
               height="18"
@@ -598,6 +641,7 @@
                 d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
               />
             </svg>
+
           </div>
 
           <div class="bubble-content">
@@ -629,7 +673,7 @@
       </div>
 
 
-      <!-- Quick prompts -->
+      <!-- Quick reflection prompts -->
       <div class="quick-prompts-bar">
 
         <button
@@ -678,7 +722,6 @@
             rows="2"
           ></textarea>
 
-
           <div class="input-card-bottom">
 
             <div class="input-tools">
@@ -690,6 +733,7 @@
                 title="Voice Dictation (Speech to Text)"
                 type="button"
               >
+
                 <svg
                   width="18"
                   height="18"
@@ -708,8 +752,8 @@
                 <span id="voiceStatusText">
                   Dictate
                 </span>
-              </button>
 
+              </button>
 
               <span
                 class="char-counter"
@@ -720,7 +764,6 @@
 
             </div>
 
-
             <div class="send-action-group">
 
               <!-- Send message -->
@@ -729,7 +772,9 @@
                 class="btn btn-primary"
                 type="button"
               >
-                <span>Send</span>
+                <span>
+                  Send
+                </span>
 
                 <svg
                   width="16"
@@ -758,10 +803,10 @@
     </section>
 
 
-    <!-- AI Analytics Sidebar -->
+    <!-- AI analytics sidebar -->
     <aside class="dashboard-analytics">
 
-      <!-- SMART Action Items -->
+      <!-- SMART action items -->
       <div class="analytics-card">
 
         <div class="card-header">
@@ -790,17 +835,19 @@
           id="actionsList"
           class="actions-list"
         >
+
           <div class="empty-state">
             Share your reflection, then click
             <strong>Synthesize</strong>
             to extract SMART action items.
           </div>
+
         </div>
 
       </div>
 
 
-      <!-- Mood and clarity -->
+      <!-- Mood and clarity analysis -->
       <div class="analytics-card">
 
         <div class="card-header">
@@ -820,7 +867,6 @@
 
         </div>
 
-
         <div class="clarity-score-container">
 
           <div class="score-dial">
@@ -838,7 +884,6 @@
 
           </div>
 
-
           <div class="score-metadata">
 
             <div class="meta-item">
@@ -855,7 +900,6 @@
               </span>
 
             </div>
-
 
             <div class="meta-item">
 
@@ -876,7 +920,6 @@
 
         </div>
 
-
         <!-- Dynamic thematic tags -->
         <div
           id="thematicTags"
@@ -888,13 +931,6 @@
     </aside>
 
   </main>
-
-
-  <!-- Toast notification -->
-  <div
-    id="toast"
-    class="toast hidden"
-  ></div>
 
 
   <!-- Firebase configuration modal -->
@@ -922,13 +958,11 @@
 
       </div>
 
-
       <p class="modal-desc">
         MindFlow AI manages Gemini configuration on the server.
         Firebase Web Config can be provided here only when needed
         for local or custom Firebase setup.
       </p>
-
 
       <div class="form-group">
 
@@ -943,7 +977,6 @@
         ></textarea>
 
       </div>
-
 
       <div class="modal-actions">
 
@@ -968,6 +1001,13 @@
     </div>
 
   </div>
+
+
+  <!-- Toast notification -->
+  <div
+    id="toast"
+    class="toast hidden"
+  ></div>
 
 
   <!-- Mobile sidebar overlay -->
