@@ -2,196 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
   <title>MindFlow AI — Get some clarity</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
-  <!-- Firebase Web SDK Compat (Production CDN) -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Firebase Web SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
-  
-  <!-- Marked for Markdown Rendering -->
+  <!-- Markdown rendering and HTML sanitization -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  
- <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+
+  <link rel="stylesheet" href="/styles.css" />
 </head>
+
 <body>
+
   <!-- Global App Header -->
   <header class="app-header">
+
     <div class="header-brand">
+
+      <!-- Open mobile sidebar -->
+      <button
+        id="mobileMenuBtn"
+        class="mobile-menu-btn"
+        aria-label="Open menu"
+        type="button"
+      >
+        ☰
+      </button>
+
       <div class="brand-logo">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-grad)" />
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+            fill="url(#sparkle-grad)"
+          />
+
           <defs>
-            <linearGradient id="sparkle-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#4285F4"/>
-              <stop offset="0.5" stop-color="#9B72CF"/>
-              <stop offset="1" stop-color="#D96570"/>
+            <linearGradient
+              id="sparkle-grad"
+              x1="2"
+              y1="2"
+              x2="22"
+              y2="22"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stop-color="#4285F4" />
+              <stop
+                offset="0.5"
+                stop-color="#9B72CF"
+              />
+              <stop
+                offset="1"
+                stop-color="#D96570"
+              />
             </linearGradient>
           </defs>
         </svg>
       </div>
+
       <div>
         <h1 class="brand-title">MindFlow AI</h1>
         <span class="brand-badge">Get some clarity</span>
       </div>
+
     </div>
 
     <div class="header-actions">
-      <div class="cloud-status-pill" id="cloudStatusPill" title="Connected to Google Cloud Run">
+
+      <!-- Backend connection status -->
+      <div
+        class="cloud-status-pill"
+        id="cloudStatusPill"
+        title="MindFlow AI backend connection"
+      >
         <span class="status-dot online"></span>
         <span class="status-label">AI Active</span>
       </div>
 
-      <!-- Settings / API Key Button -->
-      <button id="openApiKeyModalBtn" class="btn btn-secondary btn-sm" title="Configure Gemini API Key">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-        <span>API Key</span>
-      </button>
-
-      <!-- Auth Controls -->
-      <div id="authContainer">
-        <button id="signInBtn" class="btn btn-primary btn-sm">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-          </svg>
-          Sign In with Google
-        </button>
-        <div id="userProfile" class="user-profile hidden">
-          <img id="userAvatar" class="user-avatar" src="" alt="User" />
-          <div class="user-meta">
-            <span id="userName" class="user-name"></span>
-            <span id="userUidSnippet" class="user-uid"></span>
-          </div>
-          <button id="signOutBtn" class="btn btn-ghost btn-sm" title="Sign Out">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Pre-Auth Landing / Welcome Hero -->
-  <section id="landingHero" class="hero-section">
-    <div class="hero-content">
-      <div class="hero-badge">Get some clarity</div>
-      <h2 class="hero-title">Reflect with Clarity.<br><span class="gradient-text">Synthesize Action with Gemini.</span></h2>
-      <p class="hero-subtitle">
-        An enterprise-secured, multi-turn AI journaling companion deployed on render. 
-        Featuring user-isolated Firestore storage, Google Cloud Secret Manager integration, 
-        and resilient model fallback ladders.
-      </p>
-
-      <div class="hero-feature-pills">
-        <span class="pill">🔒 Firebase Auth (No password storage)</span>
-        <span class="pill">⚡ Multi-turn Gemini 3.6 Flash</span>
-        <span class="pill">📂 Isolated /users/{uid}/interactions</span>
-        <span class="pill">🎯 SMART Action Extraction</span>
-        <span class="pill">📊 Emotional Clarity Scoring</span>
-      </div>
-
-      <div class="hero-cta-group">
-        <button id="heroSignInBtn" class="btn btn-primary btn-lg">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-          </svg>
-          Sign In with Google
-        </button>
-      </div>
-      <div id="authErrorMessage" class="auth-error-banner hidden"></div>
-    </div>
-  </section>
-
-  <!-- Authenticated Private Dashboard -->
-  <main id="mainDashboard" class="dashboard-layout hidden">
-    <!-- Left Sidebar: Isolated Firestore Entries History -->
-    <!-- ChatGPT-style MindFlow Conversation Sidebar -->
-<aside class="dashboard-sidebar" id="conversationSidebar">
-
-  <div class="mindflow-sidebar-top">
-
-    <div class="sidebar-brand-row">
-      <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">M</div>
-        <div>
-          <strong>MindFlow AI</strong>
-          <span>Personal Reflection</span>
-        </div>
-      </div>
-
+      <!-- Firebase configuration -->
       <button
-        id="sidebarToggleBtn"
-        class="sidebar-icon-btn"
-        title="Collapse sidebar"
-        aria-label="Collapse sidebar"
+        id="openApiKeyModalBtn"
+        class="btn btn-secondary btn-sm"
+        title="Configure Firebase"
+        type="button"
       >
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 18l-6-6 6-6"
-          />
-        </svg>
-      </button>
-    </div>
-
-    <button id="newEntryBtn" class="new-reflection-btn">
-      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 4v16m8-8H4"
-        />
-      </svg>
-      <span>New Reflection</span>
-    </button>
-
-    <div class="conversation-search">
-      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <circle cx="11" cy="11" r="7"></circle>
-        <path d="M20 20l-4-4"></path>
-      </svg>
-
-      <input
-        id="conversationSearchInput"
-        type="text"
-        placeholder="Search reflections..."
-        autocomplete="off"
-      />
-    </div>
-
-  </div>
-
-  <div class="conversation-history">
-
-    <div class="conversation-section-title">
-      <span>Recent</span>
-    </div>
-
-    <div id="entriesList" class="entries-list">
-      <div class="entry-loading">
-        Loading your reflections...
-      </div>
-    </div>
-
-  </div>
-
-  <div class="mindflow-sidebar-footer">
-
-    <div class="privacy-indicator">
-      <div class="privacy-icon">
-        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          width="15"
+          height="15"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -199,179 +125,859 @@
             d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
           />
         </svg>
-      </div>
 
-      <div>
-        <strong>Private reflections</strong>
-        <span>Protected by Firebase</span>
+        <span>Settings</span>
+      </button>
+
+      <!-- Authentication controls -->
+      <div id="authContainer">
+
+        <button
+          id="signInBtn"
+          class="btn btn-primary btn-sm"
+          type="button"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              fill="#FBBC05"
+            />
+
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              fill="#EA4335"
+            />
+          </svg>
+
+          Sign In with Google
+        </button>
+
+        <div
+          id="userProfile"
+          class="user-profile hidden"
+        >
+          <img
+            id="userAvatar"
+            class="user-avatar"
+            src=""
+            alt="User"
+          />
+
+          <div class="user-meta">
+            <span
+              id="userName"
+              class="user-name"
+            ></span>
+
+            <span
+              id="userUidSnippet"
+              class="user-uid"
+            ></span>
+          </div>
+
+          <button
+            id="signOutBtn"
+            class="btn btn-ghost btn-sm"
+            title="Sign Out"
+            type="button"
+          >
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+          </button>
+        </div>
+
       </div>
     </div>
+  </header>
 
-  </div>
 
-</aside>
+  <!-- Pre-Authentication Landing -->
+  <section
+    id="landingHero"
+    class="hero-section"
+  >
 
-    <!-- Center: Multi-turn Reflective Chat Studio -->
-    <section class="chat-workspace">
-      <!-- Session Header Bar -->
-      <div class="workspace-header">
-        <div class="current-session-info">
-          <h2 id="sessionTitle">New Reflection Session</h2>
-          <span id="sessionTimestamp" class="session-timestamp">Ready for your thoughts</span>
+    <div class="hero-content">
+
+      <div class="hero-badge">
+        Get some clarity
+      </div>
+
+      <h2 class="hero-title">
+        Reflect with Clarity.
+        <br />
+
+        <span class="gradient-text">
+          Synthesize Action with Gemini.
+        </span>
+      </h2>
+
+      <p class="hero-subtitle">
+        An enterprise-secured, multi-turn AI journaling companion
+        with Firebase authentication, user-isolated Firestore storage,
+        server-side Gemini configuration, and resilient AI model handling.
+      </p>
+
+      <div class="hero-feature-pills">
+
+        <span class="pill">
+          🔒 Firebase Auth
+        </span>
+
+        <span class="pill">
+          ⚡ Multi-turn Gemini AI
+        </span>
+
+        <span class="pill">
+          📂 User-Isolated Reflections
+        </span>
+
+        <span class="pill">
+          🎯 SMART Action Extraction
+        </span>
+
+        <span class="pill">
+          📊 Emotional Clarity Scoring
+        </span>
+
+      </div>
+
+      <div class="hero-cta-group">
+
+        <button
+          id="heroSignInBtn"
+          class="btn btn-primary btn-lg"
+          type="button"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              fill="#4285F4"
+            />
+
+            <path
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              fill="#34A853"
+            />
+
+            <path
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+              fill="#FBBC05"
+            />
+
+            <path
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+              fill="#EA4335"
+            />
+          </svg>
+
+          Sign In with Google
+        </button>
+
+      </div>
+
+      <div
+        id="authErrorMessage"
+        class="auth-error-banner hidden"
+      ></div>
+
+    </div>
+  </section>
+
+
+  <!-- Authenticated Private Dashboard -->
+  <main
+    id="mainDashboard"
+    class="dashboard-layout hidden"
+  >
+
+    <!-- User-Isolated Reflection History -->
+    <aside
+      class="dashboard-sidebar"
+      id="conversationSidebar"
+    >
+
+      <!-- Close mobile sidebar -->
+      <button
+        id="mobileSidebarClose"
+        class="mobile-sidebar-close"
+        aria-label="Close sidebar"
+        type="button"
+      >
+        ×
+      </button>
+
+
+      <div class="mindflow-sidebar-top">
+
+        <div class="sidebar-brand-row">
+
+          <div class="sidebar-brand">
+
+            <div class="sidebar-brand-icon">
+              M
+            </div>
+
+            <div>
+              <strong>MindFlow AI</strong>
+              <span>Personal Reflection</span>
+            </div>
+
+          </div>
+
+
+          <!-- Collapse desktop sidebar -->
+          <button
+            id="sidebarToggleBtn"
+            class="sidebar-icon-btn"
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+            type="button"
+          >
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 18l-6-6 6-6"
+              />
+            </svg>
+          </button>
+
         </div>
+
+
+        <!-- Create new reflection -->
+        <button
+          id="newEntryBtn"
+          class="new-reflection-btn"
+          type="button"
+        >
+          <svg
+            width="18"
+            height="18"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+
+          <span>New Reflection</span>
+        </button>
+
+
+        <!-- Search reflection history -->
+        <div class="conversation-search">
+
+          <svg
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="7"
+            ></circle>
+
+            <path d="M20 20l-4-4"></path>
+          </svg>
+
+          <input
+            id="conversationSearchInput"
+            type="text"
+            placeholder="Search reflections..."
+            autocomplete="off"
+          />
+
+        </div>
+
+      </div>
+
+
+      <!-- Reflection history -->
+      <div class="conversation-history">
+
+        <div class="conversation-section-title">
+          <span>Recent</span>
+        </div>
+
+        <div
+          id="entriesList"
+          class="entries-list"
+        >
+          <div class="entry-loading">
+            Loading your reflections...
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- Privacy indicator -->
+      <div class="mindflow-sidebar-footer">
+
+        <div class="privacy-indicator">
+
+          <div class="privacy-icon">
+            <svg
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+          </div>
+
+          <div>
+            <strong>Private reflections</strong>
+            <span>Protected by Firebase</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+
+    <!-- Center Chat Workspace -->
+    <section class="chat-workspace">
+
+      <!-- Session header -->
+      <div class="workspace-header">
+
+        <div class="current-session-info">
+
+          <h2 id="sessionTitle">
+            New Reflection Session
+          </h2>
+
+          <span
+            id="sessionTimestamp"
+            class="session-timestamp"
+          >
+            Ready for your thoughts
+          </span>
+
+        </div>
+
+
         <div class="workspace-controls">
-          <select id="reflectionContextSelect" class="select-sm" title="Set AI Persona Context">
-            <option value="General Reflection">General Reflection</option>
-            <option value="Strategic Goal Setting">Strategic Goal Setting</option>
-            <option value="Emotional Clarity & Stress">Emotional Clarity & Stress</option>
-            <option value="Work & Leadership">Work & Leadership</option>
-            <option value="Gratitude & Wins">Gratitude & Wins</option>
+
+          <!-- Reflection context -->
+          <select
+            id="reflectionContextSelect"
+            class="select-sm"
+            title="Set AI Persona Context"
+          >
+            <option value="General Reflection">
+              General Reflection
+            </option>
+
+            <option value="Strategic Goal Setting">
+              Strategic Goal Setting
+            </option>
+
+            <option value="Emotional Clarity & Stress">
+              Emotional Clarity & Stress
+            </option>
+
+            <option value="Work & Leadership">
+              Work & Leadership
+            </option>
+
+            <option value="Gratitude & Wins">
+              Gratitude & Wins
+            </option>
           </select>
-          <button id="exportMdBtn" class="btn btn-ghost btn-sm" title="Export current reflection as Markdown">
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+
+
+          <!-- Export reflection -->
+          <button
+            id="exportMdBtn"
+            class="btn btn-ghost btn-sm"
+            title="Export current reflection as Markdown"
+            type="button"
+          >
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+
             Export
           </button>
+
         </div>
+
       </div>
 
-      <!-- Messages Stream -->
-      <div id="messagesContainer" class="messages-container">
-        <!-- AI Welcome Message -->
+
+      <!-- Chat messages -->
+      <div
+        id="messagesContainer"
+        class="messages-container"
+      >
+
+        <!-- AI welcome message -->
         <div class="message-bubble assistant-message">
+
           <div class="bubble-avatar">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"
+              />
+            </svg>
           </div>
+
           <div class="bubble-content">
+
             <div class="bubble-meta">
-              <span class="bubble-author">Gemini 3.6 Flash</span>
-              <span class="bubble-tag">Resilient Model Ladder</span>
+
+              <span class="bubble-author">
+                MindFlow AI
+              </span>
+
+              <span class="bubble-tag">
+                Get some clarity
+              </span>
+
             </div>
+
             <div class="bubble-text">
-              Welcome! What’s on your mind today? Whether you're working through a complex decision, untangling stress, or celebrating a recent win, I'm here to listen, reflect, and help you synthesize your next steps.
+              Welcome! What’s on your mind today?
+              Whether you're working through a complex decision,
+              untangling stress, or celebrating a recent win,
+              I'm here to listen, reflect, and help you synthesize
+              your next steps.
             </div>
+
           </div>
+
         </div>
+
       </div>
 
-      <!-- Quick Prompt Suggestions -->
+
+      <!-- Quick prompts -->
       <div class="quick-prompts-bar">
-        <button class="quick-prompt-chip" data-prompt="What went really well today, and why did it succeed?">🌟 Today's Big Win</button>
-        <button class="quick-prompt-chip" data-prompt="I'm feeling stuck on an important decision. Can you help me weigh trade-offs?">⚖️ Weighing Trade-offs</button>
-        <button class="quick-prompt-chip" data-prompt="Help me process recent stress and find 3 things within my immediate control.">🧘 Processing Stress</button>
-        <button class="quick-prompt-chip" data-prompt="Review my recent week and suggest 2 habits to double down on.">📈 Weekly Growth</button>
+
+        <button
+          class="quick-prompt-chip"
+          data-prompt="What went really well today, and why did it succeed?"
+          type="button"
+        >
+          🌟 Today's Big Win
+        </button>
+
+        <button
+          class="quick-prompt-chip"
+          data-prompt="I'm feeling stuck on an important decision. Can you help me weigh trade-offs?"
+          type="button"
+        >
+          ⚖️ Weighing Trade-offs
+        </button>
+
+        <button
+          class="quick-prompt-chip"
+          data-prompt="Help me process recent stress and find 3 things within my immediate control."
+          type="button"
+        >
+          🧘 Processing Stress
+        </button>
+
+        <button
+          class="quick-prompt-chip"
+          data-prompt="Review my recent week and suggest 2 habits to double down on."
+          type="button"
+        >
+          📈 Weekly Growth
+        </button>
+
       </div>
 
-      <!-- Input Bar -->
+
+      <!-- Chat input -->
       <div class="input-container">
+
         <div class="input-card">
-          <textarea 
-            id="messageInput" 
-            placeholder="Write your thoughts or journal reflection... (Press Shift+Enter for newline, Enter to send)" 
+
+          <textarea
+            id="messageInput"
+            placeholder="Write your thoughts or journal reflection... (Press Shift+Enter for newline, Enter to send)"
             rows="2"
           ></textarea>
-          
+
+
           <div class="input-card-bottom">
+
             <div class="input-tools">
-              <!-- Voice Dictation Button -->
-              <button id="voiceDictationBtn" class="tool-btn" title="Voice Dictation (Speech to Text)">
-                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
-                <span id="voiceStatusText">Dictate</span>
+
+              <!-- Voice dictation -->
+              <button
+                id="voiceDictationBtn"
+                class="tool-btn"
+                title="Voice Dictation (Speech to Text)"
+                type="button"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                  />
+                </svg>
+
+                <span id="voiceStatusText">
+                  Dictate
+                </span>
               </button>
-              <span class="char-counter" id="charCounter">0 characters</span>
+
+
+              <span
+                class="char-counter"
+                id="charCounter"
+              >
+                0 characters
+              </span>
+
             </div>
+
 
             <div class="send-action-group">
-              <button id="sendBtn" class="btn btn-primary">
+
+              <!-- Send message -->
+              <button
+                id="sendBtn"
+                class="btn btn-primary"
+                type="button"
+              >
                 <span>Send</span>
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+
+                <svg
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
               </button>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </section>
 
-    <!-- Right Sidebar: AI Synthesis Suite -->
+
+    <!-- AI Analytics Sidebar -->
     <aside class="dashboard-analytics">
+
+      <!-- SMART Action Items -->
       <div class="analytics-card">
+
         <div class="card-header">
-          <h4>SMART Action Items</h4>
-          <button id="synthesizeActionsBtn" class="btn btn-outline btn-xs" title="Synthesize actionable steps from your reflection">
+
+          <h4>
+            SMART Action Items
+          </h4>
+
+          <button
+            id="synthesizeActionsBtn"
+            class="btn btn-outline btn-xs"
+            title="Synthesize actionable steps from your reflection"
+            type="button"
+          >
             ⚡ Synthesize
           </button>
+
         </div>
-        <p class="card-desc">Gemini extracts structured, high-leverage next steps from your reflection dialogue.</p>
-        <div id="actionsList" class="actions-list">
-          <div class="empty-state">Share your reflection, then click <strong>Synthesize</strong> to extract SMART action items.</div>
+
+        <p class="card-desc">
+          Gemini extracts structured, high-leverage next steps
+          from your reflection dialogue.
+        </p>
+
+        <div
+          id="actionsList"
+          class="actions-list"
+        >
+          <div class="empty-state">
+            Share your reflection, then click
+            <strong>Synthesize</strong>
+            to extract SMART action items.
+          </div>
         </div>
+
       </div>
 
-      <!-- Mood & Clarity Meter -->
+
+      <!-- Mood and clarity -->
       <div class="analytics-card">
+
         <div class="card-header">
-          <h4>Clarity & Sentiment</h4>
-          <button id="analyzeToneBtn" class="btn btn-outline btn-xs" title="Analyze emotional tone and clarity score">
+
+          <h4>
+            Clarity & Sentiment
+          </h4>
+
+          <button
+            id="analyzeToneBtn"
+            class="btn btn-outline btn-xs"
+            title="Analyze emotional tone and clarity score"
+            type="button"
+          >
             🔍 Analyze
           </button>
-        </div>
-        
-        <div class="clarity-score-container">
-          <div class="score-dial">
-            <span id="clarityScoreDisplay" class="score-number">--</span>
-            <span class="score-label">/ 100 Clarity</span>
-          </div>
-          <div class="score-metadata">
-            <div class="meta-item">
-              <span class="meta-label">Sentiment:</span>
-              <span id="sentimentLabel" class="meta-value">--</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Energy:</span>
-              <span id="energyLabel" class="meta-value">--</span>
-            </div>
-          </div>
+
         </div>
 
-        <div id="thematicTags" class="thematic-tags">
-          <!-- Tags injected dynamically -->
+
+        <div class="clarity-score-container">
+
+          <div class="score-dial">
+
+            <span
+              id="clarityScoreDisplay"
+              class="score-number"
+            >
+              --
+            </span>
+
+            <span class="score-label">
+              / 100 Clarity
+            </span>
+
+          </div>
+
+
+          <div class="score-metadata">
+
+            <div class="meta-item">
+
+              <span class="meta-label">
+                Sentiment:
+              </span>
+
+              <span
+                id="sentimentLabel"
+                class="meta-value"
+              >
+                --
+              </span>
+
+            </div>
+
+
+            <div class="meta-item">
+
+              <span class="meta-label">
+                Energy:
+              </span>
+
+              <span
+                id="energyLabel"
+                class="meta-value"
+              >
+                --
+              </span>
+
+            </div>
+
+          </div>
+
         </div>
+
+
+        <!-- Dynamic thematic tags -->
+        <div
+          id="thematicTags"
+          class="thematic-tags"
+        ></div>
+
       </div>
 
-      
     </aside>
+
   </main>
 
-  <!-- Error / Alert Toast -->
-  <div id="toast" class="toast hidden"></div>
 
-  <!-- Setup & API Key Modal -->
-  <div id="configModal" class="modal-backdrop hidden">
+  <!-- Toast notification -->
+  <div
+    id="toast"
+    class="toast hidden"
+  ></div>
+
+
+  <!-- Firebase configuration modal -->
+  <div
+    id="configModal"
+    class="modal-backdrop hidden"
+  >
+
     <div class="modal-card">
+
       <div class="modal-header">
-        <h3>Configuration & API Key</h3>
-        <button id="closeConfigModalBtn" class="btn-close">&times;</button>
+
+        <h3>
+          Firebase Configuration
+        </h3>
+
+        <button
+          id="closeConfigModalBtn"
+          class="btn-close"
+          type="button"
+          aria-label="Close settings"
+        >
+          &times;
+        </button>
+
       </div>
+
+
       <p class="modal-desc">
-        Enter your Google AI Studio Gemini API Key below. It will be stored securely in your browser session and used for real-time model requests.
+        MindFlow AI manages Gemini configuration on the server.
+        Firebase Web Config can be provided here only when needed
+        for local or custom Firebase setup.
       </p>
-      <div class="form-group" style="margin-bottom: 14px;">
-        <label>Google AI Studio Gemini API Key</label>
-        <input type="password" id="geminiApiKeyInput" class="select-sm" style="width: 100%; padding: 8px; font-family: monospace;" placeholder="AIzaSy..." />
-        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">
-          Get your key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--accent-blue);">Google AI Studio</a>
-        </span>
-      </div>
+
+
       <div class="form-group">
-        <label>Optional: Firebase Web Config JSON</label>
-        <textarea id="firebaseConfigInput" rows="3" placeholder='{ "apiKey": "...", "projectId": "..." }'></textarea>
+
+        <label for="firebaseConfigInput">
+          Optional: Firebase Web Config JSON
+        </label>
+
+        <textarea
+          id="firebaseConfigInput"
+          rows="5"
+          placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "..." }'
+        ></textarea>
+
       </div>
+
+
       <div class="modal-actions">
-        <button id="saveConfigBtn" class="btn btn-primary">Save & Apply</button>
-        <button id="cancelConfigBtn" class="btn btn-outline">Close</button>
+
+        <button
+          id="saveConfigBtn"
+          class="btn btn-primary"
+          type="button"
+        >
+          Save & Apply
+        </button>
+
+        <button
+          id="cancelConfigBtn"
+          class="btn btn-outline"
+          type="button"
+        >
+          Close
+        </button>
+
       </div>
+
     </div>
+
   </div>
 
-  <script src="app.js"></script>
+
+  <!-- Mobile sidebar overlay -->
+  <div
+    id="sidebarOverlay"
+    class="sidebar-overlay"
+  ></div>
+
+
+  <script src="/app.js"></script>
+
 </body>
 </html>

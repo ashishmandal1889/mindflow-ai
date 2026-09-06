@@ -4,6 +4,7 @@ import { authenticateFirebaseUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+/* Protect the AI chat endpoint with Firebase authentication */
 router.post(
   "/chat",
   authenticateFirebaseUser,

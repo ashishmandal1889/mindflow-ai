@@ -11,28 +11,28 @@ import { authenticateFirebaseUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Get all reflections for the authenticated user
+/* Get all reflections for the authenticated user */
 router.get(
   "/interactions",
   authenticateFirebaseUser,
   getInteractionsController
 );
 
-// Get one reflection
+/* Get one reflection */
 router.get(
   "/interactions/:id",
   authenticateFirebaseUser,
   getInteractionController
 );
 
-// Create a reflection
+/* Create a reflection */
 router.post(
   "/interactions",
   authenticateFirebaseUser,
   createInteractionController
 );
 
-// Delete a reflection
+/* Delete a reflection */
 router.delete(
   "/interactions/:id",
   authenticateFirebaseUser,

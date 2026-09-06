@@ -2,116 +2,267 @@ import { GoogleGenAI } from "@google/genai";
 import { getGeminiApiKey } from "./secretService.js";
 
 const FALLBACK_MODELS = [
-  "gemini-3.6-flash",
   "gemini-3.5-flash-lite",
-  "gemini-3.5-flash",
-  "gemini-3.7-flash",
 ];
 
-const RECOVERABLE_STATUS_CODES = [404, 429, 500, 503];
+const RECOVERABLE_STATUS_CODES = [
+  408,
+  500,
+  502,
+  503,
+  504,
+];
 
+const NETWORK_ERROR_CODES = [
+  "ECONNRESET",
+  "ECONNREFUSED",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+  "ENETUNREACH",
+  "ENOTFOUND",
+];
+
+const REQUEST_TIMEOUT = 15000;
+const MAX_ATTEMPTS = 3;
+
+/* Create a delay between retry attempts */
+function sleep(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+/* Determine whether an error is caused by a network failure */
+function isNetworkError(error) {
+  const message =
+    error?.message?.toLowerCase() || "";
+
+  const code = error?.code;
+
+  return (
+    NETWORK_ERROR_CODES.includes(code) ||
+    message.includes("fetch failed") ||
+    message.includes("network") ||
+    message.includes("socket") ||
+    message.includes("connection reset") ||
+    message.includes("connection refused") ||
+    message.includes("timed out") ||
+    message.includes("timeout")
+  );
+}
+
+/* Get the HTTP status code from an AI error */
+function getErrorStatus(error) {
+  return (
+    error?.status ||
+    error?.statusCode ||
+    error?.response?.status ||
+    null
+  );
+}
+
+/* Determine whether an error should be retried */
+function isRecoverableError(error) {
+  const status = getErrorStatus(error);
+
+  return (
+    isNetworkError(error) ||
+    RECOVERABLE_STATUS_CODES.includes(status)
+  );
+}
+
+/* Log Gemini request failures without exposing secrets */
+function logGeminiError(model, attempt, error) {
+  console.warn(
+    `[AI Service] Model ${model} attempt ${attempt} failed.`
+  );
+
+  console.warn(
+    "[AI Service] Error message:",
+    error?.message || "Unknown error"
+  );
+
+  console.warn(
+    "[AI Service] Error code:",
+    error?.code || "N/A"
+  );
+
+  console.warn(
+    "[AI Service] Error status:",
+    error?.status || "N/A"
+  );
+
+  console.warn(
+    "[AI Service] Error status code:",
+    error?.statusCode ||
+      error?.response?.status ||
+      "N/A"
+  );
+}
+
+/* Generate AI content with retry and local fallback */
 async function generateContentWithFallback({
   contents,
   systemInstruction,
-  temperature = 0.7,
-  requestKey = null,
 }) {
-  const apiKey = await getGeminiApiKey(requestKey);
+  const apiKey = await getGeminiApiKey();
 
-  // No API key → development fallback
   if (!apiKey) {
     console.warn(
-      "[AI Service] No GEMINI_API_KEY found. Using simulated reflection."
+      "[AI Service] Gemini API key is unavailable. Using local fallback."
     );
 
     return {
-      text: generateSimulatedReflection(contents),
-      modelUsed: "AI Reflection (Simulated)",
+      text: generateLocalFallback(contents),
+      modelUsed: "AI Reflection Fallback",
       simulated: true,
     };
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({
+    apiKey,
+  });
 
-  let lastError = null;
-
-  for (const modelName of FALLBACK_MODELS) {
-    try {
-      console.log(
-        `[AI Service] Requesting model: ${modelName}...`
-      );
-
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents,
-        config: {
-          systemInstruction,
-          temperature,
-        },
-      });
-
-      if (response && response.text) {
-        return {
-          text: response.text,
-          modelUsed: modelName,
-          simulated: false,
-        };
-      }
-    } catch (err) {
-      lastError = err;
-
-      const status =
-        err.status ||
-        err.statusCode ||
-        (
-          err.message &&
-          err.message.match(/\b(404|429|500|503)\b/)?.[0]
+  for (const model of FALLBACK_MODELS) {
+    for (
+      let attempt = 1;
+      attempt <= MAX_ATTEMPTS;
+      attempt++
+    ) {
+      try {
+        console.log(
+          `[AI Service] Requesting model: ${model} (attempt ${attempt}/${MAX_ATTEMPTS})`
         );
 
-      console.warn(
-        `[AI Service] Model ${modelName} failed: ${err.message}`
-      );
+        const response =
+          await ai.models.generateContent({
+            model,
+            contents,
+            config: {
+              systemInstruction,
+              httpOptions: {
+                timeout: REQUEST_TIMEOUT,
+              },
+            },
+          });
 
-      if (
-        status &&
-        !RECOVERABLE_STATUS_CODES.includes(Number(status)) &&
-        Number(status) < 500 &&
-        Number(status) !== 404 &&
-        Number(status) !== 429
-      ) {
-        throw err;
+        const text =
+          typeof response?.text === "string"
+            ? response.text.trim()
+            : "";
+
+        if (!text) {
+          throw new Error(
+            "Gemini returned an empty response."
+          );
+        }
+
+        console.log(
+          `[AI Service] Model ${model} succeeded.`
+        );
+
+        return {
+          text,
+          modelUsed: model,
+          simulated: false,
+        };
+      } catch (error) {
+        logGeminiError(
+          model,
+          attempt,
+          error
+        );
+
+        const status = getErrorStatus(error);
+
+        /* Stop immediately when the model or quota is unavailable */
+        if (status === 404 || status === 429) {
+          console.warn(
+            `[AI Service] Gemini returned ${status}. Using local fallback.`
+          );
+
+          break;
+        }
+
+        const shouldRetry =
+          isRecoverableError(error);
+
+        if (
+          shouldRetry &&
+          attempt < MAX_ATTEMPTS
+        ) {
+          const delay =
+            1000 *
+              2 ** (attempt - 1) +
+            Math.floor(
+              Math.random() * 500
+            );
+
+          console.warn(
+            `[AI Service] Temporary failure. Retrying in ${delay}ms...`
+          );
+
+          await sleep(delay);
+
+          continue;
+        }
+
+        if (!shouldRetry) {
+          console.warn(
+            `[AI Service] Non-recoverable Gemini error for model ${model}.`
+          );
+
+          break;
+        }
       }
     }
   }
 
-  throw new Error(
-    `All AI fallback models failed. Last error: ${
-      lastError?.message || "Unknown error"
-    }`
+  console.warn(
+    "[AI Service] All Gemini requests failed. Using local fallback."
   );
+
+  return {
+    text: generateLocalFallback(contents),
+    modelUsed: "AI Reflection Fallback",
+    simulated: true,
+  };
 }
 
-function generateSimulatedReflection(contents) {
-  const lastPrompt =
-    contents[contents.length - 1]?.parts?.[0]?.text ||
-    "your reflection";
+/* Generate a safe response when Gemini is unavailable */
+function generateLocalFallback(contents) {
+  const lastUserMessage =
+    [...(contents || [])]
+      .reverse()
+      .find(
+        (entry) =>
+          entry?.role === "user" &&
+          Array.isArray(entry?.parts)
+      );
 
-  return `### 💡 Reflection & Insights
+  const text =
+    lastUserMessage?.parts
+      ?.map(
+        (part) => part?.text || ""
+      )
+      .join(" ")
+      .trim();
 
-Thank you for sharing: **"${lastPrompt.substring(
-    0,
-    100
-  )}..."**
+  if (!text) {
+    return (
+      "Take a moment to identify the most important " +
+      "thing you want to accomplish today. Start with " +
+      "one small, clear action."
+    );
+  }
 
-Here are three key perspectives to consider:
-
-- **Celebrate the Progress**: Acknowledging what went well reinforces positive cognitive feedback loops and builds resilience for future initiatives.
-
-- **Unpack the Catalyst**: What specific decision, ritual, or collaboration enabled this success? Identifying the root cause turns good luck into a repeatable system.
-
-- **Next Momentum Step**: What is one small, 5-minute action you can take today to build on this energy?
-
-> **Tip:** Connect your AI service to activate live reflection responses.`;
+  return (
+    "Your reflection shows that you are thinking about " +
+    "making progress. A useful next step is to identify " +
+    "one specific action you can complete today. " +
+    "Start small, focus on what you can control, and " +
+    "review your progress at the end of the day."
+  );
 }
 
 export {

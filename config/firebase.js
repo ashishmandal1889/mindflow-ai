@@ -2,16 +2,23 @@ import admin from "firebase-admin";
 
 let firebaseAdminActive = false;
 
+/* Initialize Firebase Admin with server credentials */
 try {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-    const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT_JSON
-    );
+  const serviceAccountJson =
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.GCP_PROJECT_ID ||
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    process.env.GCLOUD_PROJECT;
+
+  if (serviceAccountJson) {
+    const serviceAccount = JSON.parse(serviceAccountJson);
 
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      projectId:
-        process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id,
+      projectId: projectId || serviceAccount.project_id,
     });
 
     firebaseAdminActive = true;
@@ -19,45 +26,28 @@ try {
     console.log(
       "[Firebase Admin] Initialized with Service Account JSON."
     );
-  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    admin.initializeApp({
-      projectId:
-        process.env.FIREBASE_PROJECT_ID ||
-        process.env.GCP_PROJECT_ID,
-    });
-
-    firebaseAdminActive = true;
-
-    console.log(
-      "[Firebase Admin] Initialized with Service Account file."
-    );
-  } else if (
-    process.env.K_SERVICE &&
-    (process.env.GCP_PROJECT_ID ||
-      process.env.GOOGLE_CLOUD_PROJECT)
-  ) {
-    // Cloud Run production runtime
-    admin.initializeApp({
-      projectId:
-        process.env.FIREBASE_PROJECT_ID ||
-        process.env.GCP_PROJECT_ID ||
-        process.env.GOOGLE_CLOUD_PROJECT,
-    });
-
-    firebaseAdminActive = true;
-
-    console.log(
-      "[Firebase Admin] Initialized in Cloud Run environment."
-    );
   } else {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      ...(projectId ? { projectId } : {}),
+    });
+
+    firebaseAdminActive = true;
+
     console.log(
-      "[Firebase Admin] Running in Local Development / Demo Mode."
+      "[Firebase Admin] Initialized with Application Default Credentials."
     );
   }
-} catch (err) {
-  console.warn(
-    `[Firebase Admin Warning]: ${err.message}`
+} catch (error) {
+  firebaseAdminActive = false;
+
+  console.error(
+    "[Firebase Admin] Initialization failed:",
+    error.message
   );
 }
 
-export { admin, firebaseAdminActive };
+export {
+  admin,
+  firebaseAdminActive,
+};

@@ -1,26 +1,15 @@
-// ============================================================================
-// MINDFLOW AI — CLIENT APPLICATION
-// ============================================================================
+// MindFlow AI — Client Application
 
 (function () {
   "use strict";
 
-  // ==========================================================================
-  // STATE
-  // ==========================================================================
-
   let currentUser = null;
-  let currentIdToken = null;
   let activeSessionId = null;
   let currentChatHistory = [];
   let auth = null;
 
   let isRecordingVoice = false;
   let speechRecognition = null;
-
-  // ==========================================================================
-  // DOM ELEMENTS
-  // ==========================================================================
 
   const landingHero =
     document.getElementById("landingHero");
@@ -101,7 +90,9 @@
     document.getElementById("exportMdBtn");
 
   const reflectionContextSelect =
-    document.getElementById("reflectionContextSelect");
+    document.getElementById(
+      "reflectionContextSelect"
+    );
 
   const sessionTitle =
     document.getElementById("sessionTitle");
@@ -112,10 +103,7 @@
   const toast =
     document.getElementById("toast");
 
-  // ==========================================================================
-  // TOAST
-  // ==========================================================================
-
+  /* Show a temporary notification */
   function showToast(message, type = "info") {
     if (!toast) {
       return;
@@ -130,17 +118,10 @@
     }, 4500);
   }
 
-  // ==========================================================================
-  // FIREBASE INITIALIZATION
-  // ==========================================================================
-
+  /* Initialize Firebase Authentication */
   async function initializeFirebase() {
     try {
       let config = null;
-
-      // ----------------------------------------------------------------------
-      // Get Firebase configuration from backend
-      // ----------------------------------------------------------------------
 
       try {
         const response =
@@ -151,26 +132,18 @@
             await response.json();
 
           if (
-            data &&
-            data.firebaseConfig &&
-            data.firebaseConfig.apiKey
+            data?.firebaseConfig?.apiKey
           ) {
-            config =
-              data.firebaseConfig;
+            config = data.firebaseConfig;
           }
         }
       } catch (error) {
         console.warn(
-          "[Firebase] Could not fetch server config:",
-          error.message
+          "[Firebase] Could not fetch server config."
         );
       }
 
-      // ----------------------------------------------------------------------
-      // Local Firebase configuration fallback
-      // ----------------------------------------------------------------------
-
-      if (!config || !config.apiKey) {
+      if (!config?.apiKey) {
         const savedConfig =
           localStorage.getItem(
             "custom_firebase_config"
@@ -181,10 +154,7 @@
             const parsed =
               JSON.parse(savedConfig);
 
-            if (
-              parsed &&
-              parsed.apiKey
-            ) {
+            if (parsed?.apiKey) {
               config = parsed;
             }
           } catch (error) {
@@ -195,13 +165,8 @@
         }
       }
 
-      // ----------------------------------------------------------------------
-      // Initialize Firebase Authentication
-      // ----------------------------------------------------------------------
-
       if (
-        config &&
-        config.apiKey &&
+        config?.apiKey &&
         (config.projectId ||
           config.authDomain)
       ) {
@@ -215,12 +180,7 @@
           .setPersistence(
             firebase.auth.Auth.Persistence.LOCAL
           )
-          .catch((error) => {
-            console.warn(
-              "[Firebase Auth] Persistence:",
-              error.message
-            );
-          });
+          .catch(() => {});
 
         auth.onAuthStateChanged(
           async (user) => {
@@ -228,12 +188,10 @@
               currentUser = user;
 
               try {
-                currentIdToken =
-                  await user.getIdToken();
+                await user.getIdToken();
               } catch (error) {
                 console.warn(
-                  "Could not retrieve ID token:",
-                  error
+                  "[Firebase Auth] Token unavailable."
                 );
               }
 
@@ -246,7 +204,8 @@
               );
             } else {
               currentUser = null;
-              currentIdToken = null;
+              activeSessionId = null;
+              currentChatHistory = [];
 
               renderUnauthenticatedState();
             }
@@ -255,29 +214,24 @@
 
         console.log(
           "[Firebase] Initialized:",
-          config.projectId
+          config.projectId ||
+            "configured"
         );
       } else {
         auth = null;
-
         renderUnauthenticatedState();
       }
     } catch (error) {
       console.warn(
-        "[Firebase Init Warning]:",
-        error.message
+        "[Firebase] Initialization failed."
       );
 
       auth = null;
-
       renderUnauthenticatedState();
     }
   }
 
-  // ==========================================================================
-  // GOOGLE SIGN-IN
-  // ==========================================================================
-
+  /* Sign the user in with Google */
   async function handleGoogleSignIn() {
     clearAuthError();
 
@@ -321,21 +275,19 @@
 
       currentUser = result.user;
 
-      currentIdToken =
-        await currentUser.getIdToken();
-
       clearAuthError();
 
       showToast(
         `Signed in as ${
           currentUser.displayName ||
-          currentUser.email
+          currentUser.email ||
+          "User"
         }`,
         "success"
       );
     } catch (error) {
       console.error(
-        "Google Sign-In Error:",
+        "[Google Sign-In] Failed:",
         error
       );
 
@@ -351,22 +303,18 @@
     }
   }
 
-  // ==========================================================================
-  // AUTH ERRORS
-  // ==========================================================================
-
+  /* Convert Firebase authentication errors into user-friendly messages */
   function handleFirebaseAuthError(error) {
-    let title =
-      "Authentication Failed";
+    let title = "Authentication Failed";
 
     let detail =
-      error.message ||
+      error?.message ||
       "An unknown authentication error occurred.";
 
     if (
-      error.code ===
+      error?.code ===
         "auth/popup-closed-by-user" ||
-      error.code ===
+      error?.code ===
         "auth/cancelled-popup-request"
     ) {
       title = "Sign-In Cancelled";
@@ -374,7 +322,7 @@
       detail =
         "The Google Sign-In popup was closed before authentication completed.";
     } else if (
-      error.code ===
+      error?.code ===
       "auth/unauthorized-domain"
     ) {
       title = "Unauthorized Domain";
@@ -382,18 +330,17 @@
       detail =
         `This domain (${window.location.hostname}) is not authorized in Firebase.`;
     } else if (
-      error.code ===
+      error?.code ===
       "auth/operation-not-allowed"
     ) {
-      title =
-        "Google Sign-In Disabled";
+      title = "Google Sign-In Disabled";
 
       detail =
         "Google Sign-In is not enabled in your Firebase Authentication settings.";
     } else if (
-      error.code ===
+      error?.code ===
         "auth/invalid-api-key" ||
-      error.code ===
+      error?.code ===
         "auth/configuration-not-found"
     ) {
       title =
@@ -402,7 +349,7 @@
       detail =
         "Please check your Firebase Web configuration.";
     } else if (
-      error.code ===
+      error?.code ===
       "auth/popup-blocked"
     ) {
       title = "Popup Blocked";
@@ -411,63 +358,51 @@
         "Your browser blocked the Google Sign-In popup. Allow popups and try again.";
     }
 
-    showAuthError(
-      title,
-      detail
-    );
-
-    showToast(
-      title,
-      "error"
-    );
+    showAuthError(title, detail);
+    showToast(title, "error");
   }
 
-  function showAuthError(
-    title,
-    detail
-  ) {
+  /* Display an authentication error */
+  function showAuthError(title, detail) {
     if (!authErrorMessage) {
       return;
     }
 
     authErrorMessage.innerHTML =
-      `<strong>${escapeHtml(title)}</strong>${escapeHtml(detail)}`;
+      `<strong>${escapeHtml(
+        title
+      )}</strong> ${escapeHtml(detail)}`;
 
     authErrorMessage.classList.remove(
       "hidden"
     );
   }
 
+  /* Hide the authentication error */
   function clearAuthError() {
     if (!authErrorMessage) {
       return;
     }
 
     authErrorMessage.innerHTML = "";
-
     authErrorMessage.classList.add(
       "hidden"
     );
   }
 
-  // ==========================================================================
-  // SIGN OUT
-  // ==========================================================================
-
+  /* Sign the current user out */
   async function handleSignOut() {
     if (auth) {
       try {
         await auth.signOut();
       } catch (error) {
         console.warn(
-          "Sign out warning:",
-          error
+          "[Firebase Auth] Sign out failed."
         );
       }
     }
 
     currentUser = null;
-    currentIdToken = null;
     activeSessionId = null;
     currentChatHistory = [];
 
@@ -491,36 +426,12 @@
     );
   }
 
-  // ==========================================================================
-  // UI STATE
-  // ==========================================================================
-
-  function renderAuthenticatedState(
-    user
-  ) {
-    if (landingHero) {
-      landingHero.classList.add(
-        "hidden"
-      );
-    }
-
-    if (mainDashboard) {
-      mainDashboard.classList.remove(
-        "hidden"
-      );
-    }
-
-    if (signInBtn) {
-      signInBtn.classList.add(
-        "hidden"
-      );
-    }
-
-    if (userProfile) {
-      userProfile.classList.remove(
-        "hidden"
-      );
-    }
+  /* Display the authenticated dashboard */
+  function renderAuthenticatedState(user) {
+    landingHero?.classList.add("hidden");
+    mainDashboard?.classList.remove("hidden");
+    signInBtn?.classList.add("hidden");
+    userProfile?.classList.remove("hidden");
 
     const displayName =
       user?.displayName ||
@@ -564,30 +475,23 @@
     }
   }
 
+  /* Display the unauthenticated landing page */
   function renderUnauthenticatedState() {
-    if (landingHero) {
-      landingHero.classList.remove(
-        "hidden"
-      );
-    }
+    landingHero?.classList.remove(
+      "hidden"
+    );
 
-    if (mainDashboard) {
-      mainDashboard.classList.add(
-        "hidden"
-      );
-    }
+    mainDashboard?.classList.add(
+      "hidden"
+    );
 
-    if (signInBtn) {
-      signInBtn.classList.remove(
-        "hidden"
-      );
-    }
+    signInBtn?.classList.remove(
+      "hidden"
+    );
 
-    if (userProfile) {
-      userProfile.classList.add(
-        "hidden"
-      );
-    }
+    userProfile?.classList.add(
+      "hidden"
+    );
 
     if (userName) {
       userName.textContent = "";
@@ -603,17 +507,99 @@
     }
   }
 
-  // ==========================================================================
-  // MVC REFLECTION HISTORY
-  // ==========================================================================
+  /* Get a fresh Firebase authentication token */
+  async function getAuthToken(
+    forceRefresh = false
+  ) {
+    if (!currentUser) {
+      throw new Error(
+        "User authentication is required."
+      );
+    }
 
+    const token =
+      await currentUser.getIdToken(
+        forceRefresh
+      );
+
+    if (!token) {
+      throw new Error(
+        "Authentication token unavailable."
+      );
+    }
+
+    return token;
+  }
+
+  /* Send an authenticated request to the backend */
+  async function authenticatedFetch(
+    url,
+    options = {}
+  ) {
+    let token =
+      await getAuthToken(false);
+
+    const requestOptions = {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        Authorization:
+          `Bearer ${token}`,
+      },
+    };
+
+    let response =
+      await fetch(
+        url,
+        requestOptions
+      );
+
+    if (
+      response.status === 401 &&
+      currentUser
+    ) {
+      token =
+        await getAuthToken(true);
+
+      response =
+        await fetch(url, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            Authorization:
+              `Bearer ${token}`,
+          },
+        });
+    }
+
+    return response;
+  }
+
+  /* Parse a backend response */
+  async function parseApiResponse(
+    response
+  ) {
+    const data =
+      await response
+        .json()
+        .catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          data.error ||
+          `Server responded with status ${response.status}`
+      );
+    }
+
+    return data;
+  }
+
+  /* Load saved reflections for the authenticated user */
   async function bindFirestoreHistoryListener(
     userId
   ) {
-    if (
-      !userId ||
-      !currentUser
-    ) {
+    if (!userId || !currentUser) {
       if (entriesList) {
         entriesList.innerHTML = `
           <div class="entry-loading">
@@ -626,39 +612,15 @@
     }
 
     try {
-      const token =
-        await currentUser.getIdToken();
-
-      if (!token) {
-        throw new Error(
-          "Authentication token unavailable."
-        );
-      }
-
       const response =
-        await fetch(
-          "/api/interactions",
-          {
-            method: "GET",
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
+        await authenticatedFetch(
+          "/api/interactions"
         );
 
       const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-          data.error ||
-          `Server responded with status ${response.status}`
+        await parseApiResponse(
+          response
         );
-      }
 
       if (!entriesList) {
         return;
@@ -674,11 +636,21 @@
           : [];
 
       if (!interactions.length) {
-        entriesList.innerHTML = `
-          <div class="entry-loading">
-            No saved reflections yet.
-          </div>
-        `;
+        loadLocalSessionStorage(
+          userId
+        );
+
+        if (
+          !entriesList.querySelector(
+            ".entry-item"
+          )
+        ) {
+          entriesList.innerHTML = `
+            <div class="entry-loading">
+              No saved reflections yet.
+            </div>
+          `;
+        }
 
         return;
       }
@@ -691,37 +663,38 @@
           );
         }
       );
-
-      console.log(
-        "[MVC] Reflections loaded:",
-        interactions.length
-      );
     } catch (error) {
       console.error(
-        "[MVC] Could not load reflections:",
+        "[History] Could not load reflections:",
         error
       );
 
-      if (entriesList) {
+      loadLocalSessionStorage(
+        userId
+      );
+
+      if (
+        entriesList &&
+        !entriesList.querySelector(
+          ".entry-item"
+        )
+      ) {
         entriesList.innerHTML = `
           <div class="entry-loading">
-            Could not load reflections.
-            Please refresh and try again.
+            Could not load cloud reflections.
+            Local reflections are shown when available.
           </div>
         `;
       }
     }
   }
 
-  // ==========================================================================
-  // RENDER HISTORY ITEM
-  // ==========================================================================
-
+  /* Render one saved reflection in the sidebar */
   function renderHistoryEntryItem(
     docId,
     data
   ) {
-    if (!entriesList) {
+    if (!entriesList || !docId) {
       return;
     }
 
@@ -745,9 +718,8 @@
         let date;
 
         if (
-          data.updatedAt &&
-          typeof data.updatedAt.toDate ===
-            "function"
+          typeof data.updatedAt
+            ?.toDate === "function"
         ) {
           date =
             data.updatedAt.toDate();
@@ -781,7 +753,6 @@
 
     item.innerHTML = `
       <div class="entry-item-main">
-
         <div class="entry-item-title">
           ${escapeHtml(
             data.title ||
@@ -799,7 +770,6 @@
         <span class="entry-item-date">
           ${escapeHtml(dateStr)}
         </span>
-
       </div>
 
       <button
@@ -827,10 +797,6 @@
       </button>
     `;
 
-    // ------------------------------------------------------------------------
-    // Open reflection
-    // ------------------------------------------------------------------------
-
     item.addEventListener(
       "click",
       () => {
@@ -841,178 +807,69 @@
       }
     );
 
-    // ------------------------------------------------------------------------
-    // Delete reflection
-    // ------------------------------------------------------------------------
-
     const deleteBtn =
       item.querySelector(
         ".entry-delete-btn"
       );
 
-    if (deleteBtn) {
-      deleteBtn.addEventListener(
-        "click",
-        (event) => {
-          event.stopPropagation();
-
-          deleteReflection(docId);
-        }
-      );
-    }
+    deleteBtn?.addEventListener(
+      "click",
+      (event) => {
+        event.stopPropagation();
+        deleteReflection(docId);
+      }
+    );
 
     entriesList.appendChild(item);
   }
 
-  // ==========================================================================
-  // DELETE REFLECTION — MVC API
-  // ==========================================================================
+  /* Delete a saved reflection */
+  /* Delete a saved reflection */
+async function deleteReflection(docId) {
+  if (!currentUser || !docId) {
+    showToast(
+      "Please sign in before deleting a reflection.",
+      "error"
+    );
+    return;
+  }
 
-  async function deleteReflection(
-    docId
-  ) {
-    if (
-      !currentUser ||
-      !docId
-    ) {
-      showToast(
-        "Please sign in before deleting a reflection.",
-        "error"
-      );
+  const confirmed = window.confirm(
+    "Delete this reflection?\n\nThis cannot be undone."
+  );
 
-      return;
-    }
+  if (!confirmed) {
+    return;
+  }
 
-    const confirmed =
-      window.confirm(
-        "Delete this reflection?\n\nThis cannot be undone."
-      );
+  const entryElement = document.getElementById(
+    `entry-${docId}`
+  );
 
-    if (!confirmed) {
-      return;
-    }
+  const deleteButton = entryElement?.querySelector(
+    ".entry-delete-btn"
+  );
 
-    const entryElement =
-      document.getElementById(
-        `entry-${docId}`
-      );
+  if (deleteButton) {
+    deleteButton.disabled = true;
+  }
 
-    const deleteButton =
-      entryElement?.querySelector(
-        ".entry-delete-btn"
-      );
-
-    if (deleteButton) {
-      deleteButton.disabled = true;
-    }
-
-    try {
-      const token =
-        await currentUser.getIdToken(
-          true
-        );
-
-      if (!token) {
-        throw new Error(
-          "Authentication token unavailable."
-        );
+  try {
+    const response = await authenticatedFetch(
+      `/api/interactions/${encodeURIComponent(docId)}`,
+      {
+        method: "DELETE",
       }
+    );
 
-      const response =
-        await fetch(
-          `/api/interactions/${encodeURIComponent(
-            docId
-          )}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
+    if (response.status === 404) {
+      removeLocalReflection(docId);
 
-      const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-          data.error ||
-          `Server responded with status ${response.status}`
-        );
-      }
-
-      console.log(
-        "[MVC] Reflection deleted:",
-        docId
-      );
-
-      // ----------------------------------------------------------------------
-      // Remove local fallback copy too.
-      // ----------------------------------------------------------------------
-
-      if (currentUser?.uid) {
-        const key =
-          `mindflow_${currentUser.uid}`;
-
-        try {
-          const saved =
-            JSON.parse(
-              localStorage.getItem(
-                key
-              ) || "[]"
-            );
-
-          const updated =
-            saved.filter(
-              (item) =>
-                item.id !== docId
-            );
-
-          localStorage.setItem(
-            key,
-            JSON.stringify(updated)
-          );
-        } catch (storageError) {
-          console.warn(
-            "[LocalStorage] Delete failed:",
-            storageError
-          );
-        }
-      }
-
-      // ----------------------------------------------------------------------
-      // If deleting the active reflection,
-      // start a fresh session.
-      // ----------------------------------------------------------------------
-
-      if (
-        activeSessionId ===
-        docId
-      ) {
-        startNewSession();
-      }
-
-      // ----------------------------------------------------------------------
-      // Remove from UI.
-      // ----------------------------------------------------------------------
-
-      if (entryElement) {
-        entryElement.remove();
-      }
-
-      // ----------------------------------------------------------------------
-      // Empty state.
-      // ----------------------------------------------------------------------
+      entryElement?.remove();
 
       if (
         entriesList &&
-        !entriesList.querySelector(
-          ".entry-item"
-        )
+        !entriesList.querySelector(".entry-item")
       ) {
         entriesList.innerHTML = `
           <div class="entry-loading">
@@ -1021,82 +878,68 @@
         `;
       }
 
+      if (activeSessionId === docId) {
+        startNewSession();
+      }
+
       showToast(
         "Reflection deleted successfully.",
         "success"
       );
-    } catch (error) {
-      console.error(
-        "[MVC] Delete reflection error:",
-        error
-      );
 
-      if (deleteButton) {
-        deleteButton.disabled = false;
-      }
-
-      showToast(
-        `Could not delete this reflection. ${error.message}`,
-        "error"
-      );
-    }
-  }
-
-  // ==========================================================================
-  // LOCAL STORAGE FALLBACK
-  // ==========================================================================
-
-  function loadLocalSessionStorage(
-    userId
-  ) {
-    if (!entriesList) {
       return;
     }
 
-    const key =
-      `mindflow_${userId}`;
+    await parseApiResponse(response);
 
-    let saved = [];
+    removeLocalReflection(docId);
 
-    try {
-      saved =
-        JSON.parse(
-          localStorage.getItem(
-            key
-          ) || "[]"
-        );
-    } catch (error) {
-      console.warn(
-        "[LocalStorage] Could not read reflections:",
-        error
-      );
+    entryElement?.remove();
+
+    if (activeSessionId === docId) {
+      startNewSession();
     }
 
-    entriesList.innerHTML = "";
-
-    if (!saved.length) {
+    if (
+      entriesList &&
+      !entriesList.querySelector(".entry-item")
+    ) {
       entriesList.innerHTML = `
         <div class="entry-loading">
-          No reflections recorded yet.
+          No saved reflections yet.
         </div>
       `;
-
-      return;
     }
 
-    saved.forEach((item) => {
-      renderHistoryEntryItem(
-        item.id,
-        item
-      );
-    });
-  }
+    showToast(
+      "Reflection deleted successfully.",
+      "success"
+    );
+  } catch (error) {
+    console.error(
+      "[History] Delete reflection failed:",
+      error
+    );
 
+    if (deleteButton) {
+      deleteButton.disabled = false;
+    }
+
+    showToast(
+      getUserFriendlyApiError(error),
+      "error"
+    );
+  }
+}
+  /* Save a reflection to local storage */
   function saveToLocalStorage(
     userId,
     sessionData
   ) {
-    if (!userId || !sessionData?.id) {
+    if (
+      !userId ||
+      !sessionData?.id
+    ) {
       return;
     }
 
@@ -1112,6 +955,10 @@
             key
           ) || "[]"
         );
+
+      if (!Array.isArray(saved)) {
+        saved = [];
+      }
     } catch (error) {
       saved = [];
     }
@@ -1138,10 +985,49 @@
     );
   }
 
-  // ==========================================================================
-  // SAVE REFLECTION — MVC API
-  // ==========================================================================
+  /* Remove one locally cached reflection */
+  function removeLocalReflection(
+    docId
+  ) {
+    if (
+      !currentUser?.uid ||
+      !docId
+    ) {
+      return;
+    }
 
+    const key =
+      `mindflow_${currentUser.uid}`;
+
+    try {
+      const saved =
+        JSON.parse(
+          localStorage.getItem(
+            key
+          ) || "[]"
+        );
+
+      const updated =
+        Array.isArray(saved)
+          ? saved.filter(
+              (item) =>
+                item.id !==
+                docId
+            )
+          : [];
+
+      localStorage.setItem(
+        key,
+        JSON.stringify(updated)
+      );
+    } catch (error) {
+      console.warn(
+        "[LocalStorage] Could not remove reflection."
+      );
+    }
+  }
+
+  /* Save the current reflection through the backend */
   async function persistInteractionToFirestore(
     prompt,
     reply,
@@ -1154,13 +1040,8 @@
       return;
     }
 
-    // IMPORTANT:
-    // Keep payload outside try/catch so the localStorage fallback
-    // can safely access it if the API request fails.
-
     const payload = {
       id: activeSessionId,
-
       sessionId:
         activeSessionId,
 
@@ -1171,8 +1052,7 @@
         ) ||
         "New Reflection",
 
-      lastMessage:
-        prompt,
+      lastMessage: prompt,
 
       context:
         reflectionContextSelect?.value ||
@@ -1186,52 +1066,22 @@
     };
 
     try {
-      const token =
-        await currentUser.getIdToken();
-
-      if (!token) {
-        throw new Error(
-          "Authentication token unavailable."
-        );
-      }
-
       const response =
-        await fetch(
+        await authenticatedFetch(
           "/api/interactions",
           {
             method: "POST",
-
             headers: {
               "Content-Type":
                 "application/json",
-
-              Authorization:
-                `Bearer ${token}`,
             },
-
             body:
-              JSON.stringify(
-                payload
-              ),
+              JSON.stringify(payload),
           }
         );
 
-      const data =
-        await response
-          .json()
-          .catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-          data.error ||
-          `Server responded with status ${response.status}`
-        );
-      }
-
-      console.log(
-        "[MVC] Reflection saved:",
-        data
+      await parseApiResponse(
+        response
       );
 
       await bindFirestoreHistoryListener(
@@ -1239,19 +1089,14 @@
       );
     } catch (error) {
       console.error(
-        "[MVC] Reflection save failed:",
+        "[History] Reflection save failed:",
         error
       );
-
-      // ----------------------------------------------------------------------
-      // LocalStorage fallback
-      // ----------------------------------------------------------------------
 
       saveToLocalStorage(
         currentUser.uid,
         {
           ...payload,
-
           updatedAt:
             new Date().toISOString(),
         }
@@ -1259,28 +1104,24 @@
     }
   }
 
-  // ==========================================================================
-  // NEW SESSION
-  // ==========================================================================
-
+  /* Start a new reflection session */
   function startNewSession() {
     activeSessionId =
-      `session_${Date.now()}`;
+      `session_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
 
     currentChatHistory = [];
 
     if (messagesContainer) {
       messagesContainer.innerHTML = `
         <div class="message-bubble assistant-message">
-
           <div class="bubble-avatar mindflow-message-avatar">
             M
           </div>
 
           <div class="bubble-content">
-
             <div class="bubble-meta">
-
               <span class="bubble-author">
                 MindFlow AI
               </span>
@@ -1288,7 +1129,6 @@
               <span class="bubble-tag">
                 Get some clarity
               </span>
-
             </div>
 
             <div class="bubble-text">
@@ -1296,9 +1136,7 @@
               Share a situation, thought, or goal
               you want to work through together.
             </div>
-
           </div>
-
         </div>
       `;
     }
@@ -1363,16 +1201,19 @@
           "active"
         );
       });
+
+    messageInput?.focus();
   }
 
-  // ==========================================================================
-  // LOAD EXISTING SESSION
-  // ==========================================================================
-
+  /* Open a previously saved reflection */
   function loadExistingSession(
     docId,
     data
   ) {
+    if (!docId) {
+      return;
+    }
+
     activeSessionId = docId;
 
     currentChatHistory =
@@ -1394,9 +1235,8 @@
         let date;
 
         if (
-          data.updatedAt &&
-          typeof data.updatedAt.toDate ===
-            "function"
+          typeof data.updatedAt
+            ?.toDate === "function"
         ) {
           date =
             data.updatedAt.toDate();
@@ -1416,7 +1256,8 @@
             date.toLocaleString();
         }
       } catch (error) {
-        // Ignore invalid timestamp.
+        sessionTimestamp.textContent =
+          "Recent reflection";
       }
     }
 
@@ -1424,12 +1265,24 @@
       data.context &&
       reflectionContextSelect
     ) {
-      reflectionContextSelect.value =
-        data.context;
+      const matchingOption =
+        Array.from(
+          reflectionContextSelect.options
+        ).find(
+          (option) =>
+            option.value ===
+            data.context
+        );
+
+      if (matchingOption) {
+        reflectionContextSelect.value =
+          data.context;
+      }
     }
 
     if (messagesContainer) {
-      messagesContainer.innerHTML = "";
+      messagesContainer.innerHTML =
+        "";
 
       currentChatHistory.forEach(
         (turn) => {
@@ -1437,7 +1290,7 @@
             turn.role === "user"
               ? "user"
               : "assistant",
-            turn.text,
+            turn.text || "",
             turn.model || ""
           );
         }
@@ -1454,22 +1307,23 @@
         );
       });
 
-    const activeElement =
-      document.getElementById(
+    document
+      .getElementById(
         `entry-${docId}`
-      );
+      )
+      ?.classList.add("active");
 
-    if (activeElement) {
-      activeElement.classList.add(
-        "active"
-      );
-    }
+    triggerSmartAnalysis(
+      currentChatHistory
+        .map(
+          (item) =>
+            item.text || ""
+        )
+        .join("\n")
+    );
   }
 
-  // ==========================================================================
-  // MESSAGE UI
-  // ==========================================================================
-
+  /* Render a chat message */
   function appendMessageUI(
     role,
     text,
@@ -1501,17 +1355,44 @@
       typeof window.marked.parse ===
         "function"
     ) {
-      formattedContent =
+      const markdownHtml =
         window.marked.parse(
-          text || ""
+          text || "",
+          {
+            breaks: true,
+          }
         );
+
+      if (
+        window.DOMPurify &&
+        typeof window.DOMPurify.sanitize ===
+          "function"
+      ) {
+        formattedContent =
+          window.DOMPurify.sanitize(
+            markdownHtml
+          );
+      } else {
+        formattedContent =
+          escapeHtml(
+            text
+          ).replace(
+            /\n/g,
+            "<br>"
+          );
+      }
     } else {
       formattedContent =
-        escapeHtml(text).replace(
+        escapeHtml(
+          text
+        ).replace(
           /\n/g,
           "<br>"
         );
     }
+
+    const safeModel =
+      escapeHtml(model);
 
     bubble.innerHTML = `
       <div class="bubble-avatar ${
@@ -1519,7 +1400,6 @@
           ? ""
           : "mindflow-message-avatar"
       }">
-
         ${
           isUser
             ? `
@@ -1541,13 +1421,10 @@
             `
             : "M"
         }
-
       </div>
 
       <div class="bubble-content">
-
         <div class="bubble-meta">
-
           <span class="bubble-author">
             ${
               isUser
@@ -1567,12 +1444,20 @@
             }
           </span>
 
+          ${
+            !isUser && safeModel
+              ? `
+                <span class="bubble-tag">
+                  ${safeModel}
+                </span>
+              `
+              : ""
+          }
         </div>
 
         <div class="bubble-text">
           ${formattedContent}
         </div>
-
       </div>
     `;
 
@@ -1581,15 +1466,14 @@
         bubble
       );
 
-      messagesContainer.scrollTop =
-        messagesContainer.scrollHeight;
+      requestAnimationFrame(() => {
+        messagesContainer.scrollTop =
+          messagesContainer.scrollHeight;
+      });
     }
   }
 
-  // ==========================================================================
-  // SEND MESSAGE
-  // ==========================================================================
-
+  /* Send a reflection to the AI backend */
   async function sendMessage() {
     if (!messageInput) {
       return;
@@ -1622,16 +1506,12 @@
 
     currentChatHistory.push({
       role: "user",
-      text: text,
+      text,
     });
 
     messageInput.value = "";
 
     updateCharCounter();
-
-    // ------------------------------------------------------------------------
-    // Loading message
-    // ------------------------------------------------------------------------
 
     const loadingBubble =
       document.createElement("div");
@@ -1645,9 +1525,7 @@
       </div>
 
       <div class="bubble-content">
-
         <div class="bubble-meta">
-
           <span class="bubble-author">
             MindFlow AI
           </span>
@@ -1655,80 +1533,54 @@
           <span class="bubble-tag">
             Get some clarity
           </span>
-
         </div>
 
         <div class="bubble-text">
           Reflecting...
         </div>
-
       </div>
     `;
 
-    if (messagesContainer) {
-      messagesContainer.appendChild(
-        loadingBubble
-      );
+    messagesContainer?.appendChild(
+      loadingBubble
+    );
 
+    if (messagesContainer) {
       messagesContainer.scrollTop =
         messagesContainer.scrollHeight;
     }
 
+    messageInput.disabled = true;
+
+    if (sendBtn) {
+      sendBtn.disabled = true;
+    }
+
     try {
-      const token =
-        await currentUser.getIdToken(
-          true
-        );
-
-      if (!token) {
-        throw new Error(
-          "Authentication token unavailable."
-        );
-      }
-
-      const storedKey =
-        localStorage.getItem(
-          "gemini_api_key"
-        ) || "";
-
-      const headers = {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${token}`,
-      };
-
-      if (storedKey) {
-        headers[
-          "x-gemini-api-key"
-        ] = storedKey;
-      }
-
       const historyForApi =
         currentChatHistory
           .slice(0, -1)
+          .slice(-10)
           .map((turn) => ({
             role: turn.role,
             text: turn.text,
-            model: turn.model,
+            model: turn.model || "",
           }));
 
       const response =
-        await fetch(
+        await authenticatedFetch(
           "/api/chat",
           {
             method: "POST",
-
-            headers: headers,
-
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
             body:
               JSON.stringify({
                 message: text,
-
                 history:
                   historyForApi,
-
                 context:
                   reflectionContextSelect?.value ||
                   "",
@@ -1737,15 +1589,13 @@
         );
 
       const data =
-        await response
-          .json()
-          .catch(() => ({}));
+        await parseApiResponse(
+          response
+        );
 
-      if (!response.ok) {
+      if (!data.reply) {
         throw new Error(
-          data.message ||
-          data.error ||
-          `Server responded with status ${response.status}`
+          "The AI service returned an empty response."
         );
       }
 
@@ -1760,129 +1610,93 @@
       currentChatHistory.push({
         role: "model",
         text: data.reply,
-        model: data.model,
+        model:
+          data.model || "",
       });
 
-      messageInput.disabled =
-        false;
-
-      if (sendBtn) {
-        sendBtn.disabled =
-          false;
+      if (sessionTitle) {
+        sessionTitle.textContent =
+          currentChatHistory[0]?.text?.substring(
+            0,
+            45
+          ) ||
+          "Reflection Session";
       }
 
-      messageInput.focus();
+      if (sessionTimestamp) {
+        sessionTimestamp.textContent =
+          new Date().toLocaleTimeString(
+            [],
+            {
+              hour: "2-digit",
+              minute: "2-digit",
+            }
+          );
+      }
 
-      // ----------------------------------------------------------------------
-      // Save through MVC backend
-      // ----------------------------------------------------------------------
-
-      persistInteractionToFirestore(
+      await persistInteractionToFirestore(
         text,
         data.reply,
         data.model
-      ).catch((error) => {
-        console.warn(
-          "[MVC] Background save failed:",
-          error
-        );
-      });
-
-      // ----------------------------------------------------------------------
-      // Analyze in background
-      // ----------------------------------------------------------------------
+      );
 
       triggerSmartAnalysis(
         `${text}\n${data.reply}`
       );
     } catch (error) {
       console.error(
-        "Message Error:",
+        "[Chat] Message failed:",
         error
       );
 
       loadingBubble.remove();
 
       showToast(
-        `Error: ${error.message}`,
+        getUserFriendlyApiError(
+          error
+        ),
         "error"
       );
 
-      const errorMessage =
-        `⚠️ <strong>Could not connect to the AI service.</strong><br><br>` +
-        `Please try sending your message again.`;
-
       appendMessageUI(
         "assistant",
-        errorMessage
+        "⚠️ **I couldn't complete that response.**\n\nPlease try sending your message again."
       );
     } finally {
       messageInput.disabled =
         false;
 
+      messageInput.focus();
+
       if (sendBtn) {
         sendBtn.disabled =
           false;
       }
-
-      messageInput.focus();
     }
   }
 
-  // ==========================================================================
-  // SMART ANALYSIS
-  // ==========================================================================
-
+  /* Analyze sentiment and clarity through the backend */
   async function triggerSmartAnalysis(
     fullText
   ) {
     if (
       !fullText ||
-      fullText.length < 20
+      fullText.length < 20 ||
+      !currentUser
     ) {
       return;
     }
 
-    if (!currentUser) {
-      return;
-    }
-
     try {
-      const token =
-        currentIdToken ||
-        await currentUser.getIdToken();
-
-      if (!token) {
-        return;
-      }
-
-      const storedKey =
-        localStorage.getItem(
-          "gemini_api_key"
-        ) || "";
-
-      const headers = {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${token}`,
-      };
-
-      if (storedKey) {
-        headers[
-          "x-gemini-api-key"
-        ] = storedKey;
-      }
-
       const response =
-        await fetch(
+        await authenticatedFetch(
           "/api/analyze-sentiment",
           {
             method: "POST",
-
-            headers: headers,
-
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
             body:
               JSON.stringify({
                 content:
@@ -1891,17 +1705,15 @@
           }
         );
 
-      if (!response.ok) {
-        return;
-      }
-
       const data =
-        await response.json();
+        await parseApiResponse(
+          response
+        );
 
       if (clarityScoreDisplay) {
         clarityScoreDisplay.textContent =
-          data.clarityScore ||
-          85;
+          data.clarityScore ??
+          "--";
       }
 
       if (sentimentLabel) {
@@ -1917,12 +1729,20 @@
       }
 
       if (thematicTags) {
-        thematicTags.innerHTML = "";
+        thematicTags.innerHTML =
+          "";
 
         (
-          data.keyThemes ||
-          []
+          Array.isArray(
+            data.keyThemes
+          )
+            ? data.keyThemes
+            : []
         ).forEach((theme) => {
+          if (!theme) {
+            return;
+          }
+
           const chip =
             document.createElement(
               "span"
@@ -1932,7 +1752,9 @@
             "theme-chip";
 
           chip.textContent =
-            `#${theme}`;
+            `#${String(theme)
+              .replace(/^#+/, "")
+              .trim()}`;
 
           thematicTags.appendChild(
             chip
@@ -1941,16 +1763,12 @@
       }
     } catch (error) {
       console.warn(
-        "Sentiment analysis skipped:",
-        error
+        "[Sentiment] Analysis skipped."
       );
     }
   }
 
-  // ==========================================================================
-  // SMART ACTION ITEMS
-  // ==========================================================================
-
+  /* Generate SMART action items through the backend */
   async function synthesizeActionItems() {
     if (
       currentChatHistory.length ===
@@ -1990,43 +1808,15 @@
         .join("\n\n");
 
     try {
-      const token =
-        currentIdToken ||
-        await currentUser.getIdToken();
-
-      if (!token) {
-        throw new Error(
-          "Authentication token unavailable."
-        );
-      }
-
-      const storedKey =
-        localStorage.getItem(
-          "gemini_api_key"
-        ) || "";
-
-      const headers = {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${token}`,
-      };
-
-      if (storedKey) {
-        headers[
-          "x-gemini-api-key"
-        ] = storedKey;
-      }
-
       const response =
-        await fetch(
+        await authenticatedFetch(
           "/api/synthesize-actions",
           {
             method: "POST",
-
-            headers: headers,
-
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
             body:
               JSON.stringify({
                 content:
@@ -2035,33 +1825,31 @@
           }
         );
 
-      if (!response.ok) {
-        const data =
-          await response
-            .json()
-            .catch(() => ({}));
-
-        throw new Error(
-          data.message ||
-          data.error ||
-          "Synthesis service unavailable."
-        );
-      }
-
       const data =
-        await response.json();
+        await parseApiResponse(
+          response
+        );
 
       renderActionItems(
         data.actions || []
       );
 
       showToast(
-        "SMART Action items synthesized!",
+        data.simulated
+          ? "Local fallback actions generated."
+          : "SMART Action items synthesized!",
         "success"
       );
     } catch (error) {
+      console.error(
+        "[SMART Actions] Failed:",
+        error
+      );
+
       showToast(
-        `Synthesis Error: ${error.message}`,
+        getUserFriendlyApiError(
+          error
+        ),
         "error"
       );
     } finally {
@@ -2075,6 +1863,7 @@
     }
   }
 
+  /* Render generated SMART action items */
   function renderActionItems(
     actions
   ) {
@@ -2107,37 +1896,41 @@
         "action-item-card";
 
       const priority =
-        action.priority ||
+        action?.priority ||
         "Medium";
 
       const priorityClass =
         String(priority)
-          .toLowerCase();
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9_-]/g,
+            ""
+          );
 
       card.innerHTML = `
         <div class="action-item-top">
-
           <strong style="color:#fff;">
             ${escapeHtml(
-              action.title ||
+              action?.title ||
                 "Action item"
             )}
           </strong>
 
-          <span class="action-tag tag-${escapeHtml(
-            priorityClass
-          )}">
+          <span
+            class="action-tag tag-${escapeHtml(
+              priorityClass
+            )}"
+          >
             ${escapeHtml(
               priority
             )}
           </span>
-
         </div>
 
         <div class="action-step">
           Next Step:
           ${escapeHtml(
-            action.nextStep ||
+            action?.nextStep ||
               "Review plan"
           )}
         </div>
@@ -2149,10 +1942,7 @@
     });
   }
 
-  // ==========================================================================
-  // VOICE DICTATION
-  // ==========================================================================
-
+  /* Initialize browser speech recognition */
   function setupVoiceDictation() {
     if (!voiceDictationBtn) {
       return;
@@ -2177,6 +1967,10 @@
 
     speechRecognition.interimResults =
       true;
+
+    speechRecognition.lang =
+      navigator.language ||
+      "en-US";
 
     speechRecognition.onresult =
       (event) => {
@@ -2206,12 +2000,7 @@
       };
 
     speechRecognition.onerror =
-      (event) => {
-        console.warn(
-          "Speech recognition error:",
-          event.error
-        );
-
+      () => {
         stopRecording();
       };
 
@@ -2244,10 +2033,9 @@
     );
   }
 
+  /* Start voice dictation */
   function startRecording() {
-    if (
-      !speechRecognition
-    ) {
+    if (!speechRecognition) {
       return;
     }
 
@@ -2267,29 +2055,29 @@
       }
     } catch (error) {
       console.warn(
-        "Could not start voice recognition:",
-        error
+        "[Voice] Could not start recognition."
       );
     }
   }
 
+  /* Stop voice dictation */
   function stopRecording() {
-    if (
-      !speechRecognition
-    ) {
+    if (!speechRecognition) {
       return;
     }
 
     try {
       speechRecognition.stop();
     } catch (error) {
-      // Ignore stop errors.
+      console.warn(
+        "[Voice] Stop warning."
+      );
     }
 
     isRecordingVoice =
       false;
 
-    voiceDictationBtn.classList.remove(
+    voiceDictationBtn?.classList.remove(
       "recording"
     );
 
@@ -2299,10 +2087,7 @@
     }
   }
 
-  // ==========================================================================
-  // EXPORT
-  // ==========================================================================
-
+  /* Export the current reflection as Markdown */
   function exportMarkdown() {
     if (
       !currentChatHistory.length
@@ -2335,10 +2120,12 @@
         const speaker =
           turn.role === "user"
             ? "### 👤 You"
-            : "### M MindFlow AI";
+            : "### ✨ MindFlow AI";
 
         markdown +=
-          `${speaker}\n\n${turn.text}\n\n`;
+          `${speaker}\n\n${
+            turn.text || ""
+          }\n\n`;
       }
     );
 
@@ -2352,14 +2139,10 @@
       );
 
     const url =
-      URL.createObjectURL(
-        blob
-      );
+      URL.createObjectURL(blob);
 
     const link =
-      document.createElement(
-        "a"
-      );
+      document.createElement("a");
 
     link.href = url;
 
@@ -2384,10 +2167,6 @@
     );
   }
 
-  // ==========================================================================
-  // SIDEBAR
-  // ==========================================================================
-
   const conversationSidebar =
     document.getElementById(
       "conversationSidebar"
@@ -2403,89 +2182,73 @@
       "conversationSearchInput"
     );
 
-  if (
-    sidebarToggleBtn &&
-    conversationSidebar
-  ) {
-    sidebarToggleBtn.addEventListener(
-      "click",
-      () => {
-        conversationSidebar.classList.toggle(
+  /* Toggle the desktop sidebar */
+  sidebarToggleBtn?.addEventListener(
+    "click",
+    () => {
+      conversationSidebar?.classList.toggle(
+        "collapsed"
+      );
+
+      const collapsed =
+        conversationSidebar?.classList.contains(
           "collapsed"
         );
 
-        const collapsed =
-          conversationSidebar.classList.contains(
-            "collapsed"
-          );
+      sidebarToggleBtn.title =
+        collapsed
+          ? "Expand sidebar"
+          : "Collapse sidebar";
 
-        sidebarToggleBtn.title =
-          collapsed
-            ? "Expand sidebar"
-            : "Collapse sidebar";
+      sidebarToggleBtn.setAttribute(
+        "aria-label",
+        collapsed
+          ? "Expand sidebar"
+          : "Collapse sidebar"
+      );
+    }
+  );
 
-        sidebarToggleBtn.setAttribute(
-          "aria-label",
-          collapsed
-            ? "Expand sidebar"
-            : "Collapse sidebar"
-        );
-      }
-    );
-  }
+  /* Filter saved reflections by search text */
+  conversationSearchInput?.addEventListener(
+    "input",
+    () => {
+      const query =
+        conversationSearchInput.value
+          .trim()
+          .toLowerCase();
 
-  // ==========================================================================
-  // SEARCH REFLECTIONS
-  // ==========================================================================
+      document
+        .querySelectorAll(
+          ".entry-item"
+        )
+        .forEach((item) => {
+          const title =
+            item.querySelector(
+              ".entry-item-title"
+            )?.textContent
+              ?.toLowerCase() ||
+            "";
 
-  if (
-    conversationSearchInput
-  ) {
-    conversationSearchInput.addEventListener(
-      "input",
-      () => {
-        const query =
-          conversationSearchInput.value
-            .trim()
-            .toLowerCase();
+          const preview =
+            item.querySelector(
+              ".entry-item-preview"
+            )?.textContent
+              ?.toLowerCase() ||
+            "";
 
-        document
-          .querySelectorAll(
-            ".entry-item"
-          )
-          .forEach((item) => {
-            const title =
-              item.querySelector(
-                ".entry-item-title"
-              )?.textContent
-                ?.toLowerCase() ||
-              "";
+          const matches =
+            !query ||
+            title.includes(query) ||
+            preview.includes(query);
 
-            const preview =
-              item.querySelector(
-                ".entry-item-preview"
-              )?.textContent
-                ?.toLowerCase() ||
-              "";
+          item.style.display =
+            matches ? "" : "none";
+        });
+    }
+  );
 
-            const matches =
-              !query ||
-              title.includes(query) ||
-              preview.includes(query);
-
-            item.style.display =
-              matches
-                ? ""
-                : "none";
-          });
-      }
-    );
-  }
-
-  // ==========================================================================
-  // QUICK PROMPTS
-  // ==========================================================================
-
+  /* Insert a quick prompt into the message input */
   document
     .querySelectorAll(
       ".quick-prompt-chip"
@@ -2510,10 +2273,7 @@
       );
     });
 
-  // ==========================================================================
-  // CHARACTER COUNTER
-  // ==========================================================================
-
+  /* Update the message character count */
   function updateCharCounter() {
     if (
       !messageInput ||
@@ -2526,10 +2286,7 @@
       `${messageInput.value.length} characters`;
   }
 
-  // ==========================================================================
-  // HTML ESCAPING
-  // ==========================================================================
-
+  /* Escape user-controlled text before inserting it into HTML */
   function escapeHtml(str) {
     if (
       str === null ||
@@ -2561,102 +2318,125 @@
       );
   }
 
-  // ==========================================================================
-  // EVENT LISTENERS
-  // ==========================================================================
+  /* Convert backend errors into clear user-facing messages */
+  function getUserFriendlyApiError(
+    error
+  ) {
+    const message =
+      error?.message || "";
 
-  if (signInBtn) {
-    signInBtn.addEventListener(
-      "click",
-      handleGoogleSignIn
-    );
+    const lowerMessage =
+      message.toLowerCase();
+
+    if (
+      message.includes("401") ||
+      lowerMessage.includes(
+        "authentication"
+      ) ||
+      lowerMessage.includes(
+        "unauthorized"
+      )
+    ) {
+      return "Your session may have expired. Please sign in again.";
+    }
+
+    if (
+      message.includes("429")
+    ) {
+      return "The AI service is temporarily busy. Please try again in a moment.";
+    }
+
+    if (
+      message.includes("500") ||
+      message.includes("502") ||
+      message.includes("503")
+    ) {
+      return "The AI service is temporarily unavailable. Please try again.";
+    }
+
+    if (
+      lowerMessage.includes(
+        "fetch failed"
+      ) ||
+      lowerMessage.includes(
+        "network"
+      )
+    ) {
+      return "Could not reach the AI service. Please check your connection and try again.";
+    }
+
+    return "Could not connect to the AI service. Please try again.";
   }
 
-  if (heroSignInBtn) {
-    heroSignInBtn.addEventListener(
-      "click",
-      handleGoogleSignIn
-    );
-  }
+  signInBtn?.addEventListener(
+    "click",
+    handleGoogleSignIn
+  );
 
-  if (signOutBtn) {
-    signOutBtn.addEventListener(
-      "click",
-      handleSignOut
-    );
-  }
+  heroSignInBtn?.addEventListener(
+    "click",
+    handleGoogleSignIn
+  );
 
-  if (newEntryBtn) {
-    newEntryBtn.addEventListener(
-      "click",
-      startNewSession
-    );
-  }
+  signOutBtn?.addEventListener(
+    "click",
+    handleSignOut
+  );
 
-  if (sendBtn) {
-    sendBtn.addEventListener(
-      "click",
-      sendMessage
-    );
-  }
+  newEntryBtn?.addEventListener(
+    "click",
+    startNewSession
+  );
 
-  if (synthesizeActionsBtn) {
-    synthesizeActionsBtn.addEventListener(
-      "click",
-      synthesizeActionItems
-    );
-  }
+  sendBtn?.addEventListener(
+    "click",
+    sendMessage
+  );
 
-  if (analyzeToneBtn) {
-    analyzeToneBtn.addEventListener(
-      "click",
-      () => {
-        const fullText =
-          currentChatHistory
-            .map(
-              (item) =>
-                item.text
-            )
-            .join("\n");
+  synthesizeActionsBtn?.addEventListener(
+    "click",
+    synthesizeActionItems
+  );
 
-        triggerSmartAnalysis(
-          fullText
-        );
+  analyzeToneBtn?.addEventListener(
+    "click",
+    () => {
+      const fullText =
+        currentChatHistory
+          .map(
+            (item) =>
+              item.text || ""
+          )
+          .join("\n");
+
+      triggerSmartAnalysis(
+        fullText
+      );
+    }
+  );
+
+  exportMdBtn?.addEventListener(
+    "click",
+    exportMarkdown
+  );
+
+  messageInput?.addEventListener(
+    "input",
+    updateCharCounter
+  );
+
+  messageInput?.addEventListener(
+    "keydown",
+    (event) => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+        sendMessage();
       }
-    );
-  }
-
-  if (exportMdBtn) {
-    exportMdBtn.addEventListener(
-      "click",
-      exportMarkdown
-    );
-  }
-
-  if (messageInput) {
-    messageInput.addEventListener(
-      "input",
-      updateCharCounter
-    );
-
-    messageInput.addEventListener(
-      "keydown",
-      (event) => {
-        if (
-          event.key === "Enter" &&
-          !event.shiftKey
-        ) {
-          event.preventDefault();
-
-          sendMessage();
-        }
-      }
-    );
-  }
-
-  // ==========================================================================
-  // CONFIGURATION MODAL
-  // ==========================================================================
+    }
+  );
 
   const configModal =
     document.getElementById(
@@ -2683,159 +2463,232 @@
       "saveConfigBtn"
     );
 
-  const geminiApiKeyInput =
-    document.getElementById(
-      "geminiApiKeyInput"
-    );
-
   const firebaseConfigInput =
     document.getElementById(
       "firebaseConfigInput"
     );
 
+  /* Open the Firebase configuration modal */
   function openConfigModal() {
-    if (geminiApiKeyInput) {
-      geminiApiKeyInput.value =
+    if (firebaseConfigInput) {
+      firebaseConfigInput.value =
         localStorage.getItem(
-          "gemini_api_key"
+          "custom_firebase_config"
         ) || "";
     }
 
-    if (configModal) {
-      configModal.classList.remove(
-        "hidden"
-      );
-    }
+    configModal?.classList.remove(
+      "hidden"
+    );
   }
 
+  /* Close the Firebase configuration modal */
   function closeConfigModal() {
-    if (configModal) {
-      configModal.classList.add(
-        "hidden"
-      );
-    }
+    configModal?.classList.add(
+      "hidden"
+    );
   }
 
   window.openApiKeyModal =
     openConfigModal;
 
-  if (openApiKeyModalBtn) {
-    openApiKeyModalBtn.addEventListener(
-      "click",
-      openConfigModal
-    );
-  }
+  openApiKeyModalBtn?.addEventListener(
+    "click",
+    openConfigModal
+  );
 
-  if (closeConfigModalBtn) {
-    closeConfigModalBtn.addEventListener(
-      "click",
-      closeConfigModal
-    );
-  }
+  closeConfigModalBtn?.addEventListener(
+    "click",
+    closeConfigModal
+  );
 
-  if (cancelConfigBtn) {
-    cancelConfigBtn.addEventListener(
-      "click",
-      closeConfigModal
-    );
-  }
+  cancelConfigBtn?.addEventListener(
+    "click",
+    closeConfigModal
+  );
 
-  if (saveConfigBtn) {
-    saveConfigBtn.addEventListener(
-      "click",
-      async () => {
-        const apiKey =
-          geminiApiKeyInput
-            ? geminiApiKeyInput.value.trim()
-            : "";
+  saveConfigBtn?.addEventListener(
+    "click",
+    () => {
+      const firebaseConfigText =
+        firebaseConfigInput
+          ?.value.trim() || "";
 
-        if (apiKey) {
-          localStorage.setItem(
-            "gemini_api_key",
-            apiKey
-          );
-
-          // Optional compatibility endpoint.
-          // The actual AI requests are still handled by
-          // the backend MVC service.
-          fetch(
-            "/api/set-key",
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-
-              body:
-                JSON.stringify({
-                  key: apiKey,
-                }),
-            }
-          ).catch(() => {});
-
-          showToast(
-            "AI configuration saved!",
-            "success"
-          );
-        }
-
-        const firebaseConfigText =
-          firebaseConfigInput
-            ? firebaseConfigInput.value.trim()
-            : "";
-
-        if (firebaseConfigText) {
-          try {
-            const config =
-              JSON.parse(
-                firebaseConfigText
-              );
-
-            localStorage.setItem(
-              "custom_firebase_config",
-              JSON.stringify(
-                config
-              )
-            );
-
-            showToast(
-              "Firebase configuration saved. Reloading...",
-              "success"
-            );
-
-            setTimeout(
-              () => {
-                window.location.reload();
-              },
-              1000
-            );
-
-            return;
-          } catch (error) {
-            showToast(
-              "Invalid Firebase configuration JSON.",
-              "error"
-            );
-
-            return;
-          }
-        }
-
+      if (!firebaseConfigText) {
         closeConfigModal();
+        return;
+      }
+
+      try {
+        const config =
+          JSON.parse(
+            firebaseConfigText
+          );
+
+        if (
+          !config ||
+          !config.apiKey
+        ) {
+          throw new Error(
+            "Firebase API key is required."
+          );
+        }
+
+        localStorage.setItem(
+          "custom_firebase_config",
+          JSON.stringify(config)
+        );
+
+        showToast(
+          "Firebase configuration saved. Reloading...",
+          "success"
+        );
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (error) {
+        showToast(
+          "Invalid Firebase configuration JSON.",
+          "error"
+        );
+      }
+    }
+  );
+
+  initializeFirebase();
+  setupVoiceDictation();
+  updateCharCounter();
+})();
+
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    const mobileMenuBtn =
+      document.getElementById(
+        "mobileMenuBtn"
+      );
+
+    const mobileSidebarClose =
+      document.getElementById(
+        "mobileSidebarClose"
+      );
+
+    const sidebarOverlay =
+      document.getElementById(
+        "sidebarOverlay"
+      );
+
+    const conversationSidebar =
+      document.getElementById(
+        "conversationSidebar"
+      );
+
+    /* Open mobile sidebar */
+    function openMobileSidebar() {
+      conversationSidebar?.classList.add(
+        "mobile-open"
+      );
+
+      sidebarOverlay?.classList.add(
+        "active"
+      );
+
+      document.body.classList.add(
+        "sidebar-open"
+      );
+    }
+
+    /* Close mobile sidebar */
+    function closeMobileSidebar() {
+      conversationSidebar?.classList.remove(
+        "mobile-open"
+      );
+
+      sidebarOverlay?.classList.remove(
+        "active"
+      );
+
+      document.body.classList.remove(
+        "sidebar-open"
+      );
+    }
+
+    /* Open sidebar from the mobile menu */
+    mobileMenuBtn?.addEventListener(
+      "click",
+      (event) => {
+        event.stopPropagation();
+        openMobileSidebar();
+      }
+    );
+
+    /* Close sidebar from the close button */
+    mobileSidebarClose?.addEventListener(
+      "click",
+      closeMobileSidebar
+    );
+
+    /* Close sidebar by clicking the overlay */
+    sidebarOverlay?.addEventListener(
+      "click",
+      closeMobileSidebar
+    );
+
+    /* Close sidebar with the Escape key */
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (
+          event.key === "Escape"
+        ) {
+          closeMobileSidebar();
+        }
+      }
+    );
+
+    /* Close sidebar after selecting an item */
+    conversationSidebar?.addEventListener(
+      "click",
+      (event) => {
+        const clickedElement =
+          event.target.closest(
+            "button, a, .conversation-entry, .entry-item"
+          );
+
+        if (!clickedElement) {
+          return;
+        }
+
+        if (
+          clickedElement.classList.contains(
+            "entry-delete-btn"
+          )
+        ) {
+          return;
+        }
+
+        if (
+          clickedElement.id ===
+          "sidebarToggleBtn"
+        ) {
+          return;
+        }
+
+        closeMobileSidebar();
+      }
+    );
+
+    /* Close mobile sidebar when switching to desktop */
+    window.addEventListener(
+      "resize",
+      () => {
+        if (
+          window.innerWidth > 900
+        ) {
+          closeMobileSidebar();
+        }
       }
     );
   }
-
-  // ==========================================================================
-  // START APPLICATION
-  // ==========================================================================
-
-  initializeFirebase();
-
-  setupVoiceDictation();
-
-  updateCharCounter();
-
-})();
+);

@@ -1,78 +1,175 @@
-﻿#  MindFlow AI
+﻿# MindFlow AI
 
-> **AI-powered reflective journaling and personal clarity studio built with Google Cloud Run, Firebase, Firestore, and Gemini.**
+An AI-powered journaling and reflection companion that helps users understand their thoughts, identify patterns, and turn reflection into meaningful actions.
 
-MindFlow AI helps users turn everyday thoughts, challenges, and experiences into structured reflection, insights, and actionable next steps.
+MindFlow AI is a full-stack web application designed to make personal reflection more structured, insightful, and actionable.
 
-The application combines secure Google authentication, user-isolated Firestore storage, multi-turn Gemini conversations, reflection analysis, SMART-style action synthesis, voice dictation, and export capabilities in a single web experience.
-
----
-
-##  Features
-
-###  Secure Google Authentication
-- Firebase Authentication with Google Sign-In
-- No application-managed passwords
-- Firebase ID tokens are verified by the backend
-- Authenticated users access only their own data
-
-###  Gemini-Powered Reflection
-- Multi-turn conversational reflection
-- Empathetic and structured responses
-- Context-aware journaling conversations
-- Resilient Gemini model fallback
-
-###  Reflection Insights
-- Emotional sentiment analysis
-- Clarity scoring
-- Theme extraction
-- Structured reflection prompts
-
-###  Action Synthesis
-Converts reflective conversations into practical next steps, including prioritized and measurable action items.
-
-###  Voice Dictation
-Uses the browser Web Speech API to allow users to speak their reflections instead of typing.
-
-###  Export
-Users can export their reflections as Markdown and use the browser's print functionality for PDF output.
-
-###  Cloud-Native Architecture
-Designed to run as a containerized Express application on Google Cloud Run with Firebase and Google Cloud services.
+Users can sign in with Google, write reflections, have AI-powered conversations, analyze their thoughts, generate SMART actions, and manage their reflection history.
 
 ---
 
-##  Architecture
+## Live Demo
+
+Live Application:
+
+
+GitHub Repository:
+https://github.com/ashishmandal1889/mindflow-ai
+
+---
+
+## Features
+
+### Google Authentication
+
+- Secure Google Sign-In using Firebase Authentication
+- Firebase ID token based authentication
+- User-specific reflection data
+- Production authentication verification using Firebase Admin SDK
+
+### AI Reflection Chat
+
+- Conversational AI journaling experience
+- Users can describe thoughts, problems, goals, or situations
+- AI provides empathetic and structured responses
+- Conversation context is maintained during a session
+
+### AI-Powered Reflection Analysis
+
+MindFlow AI analyzes reflections and provides:
+
+- Sentiment analysis
+- Emotional insights
+- Key observations
+- Thought patterns
+- Practical suggestions
+
+### SMART Action Generation
+
+MindFlow converts reflection into actionable goals using the SMART framework:
+
+- Specific
+- Measurable
+- Achievable
+- Relevant
+- Time-bound
+
+This helps users move from thinking to action.
+
+### Reflection History
+
+Users can:
+
+- Save reflections
+- View previous conversations
+- Continue previous sessions
+- Delete saved reflections
+- Keep their data associated with their authenticated account
+
+### Voice Input
+
+Users can use voice input to write reflections without typing.
+
+### Export
+
+Reflection content can be exported for personal use.
+
+### Search
+
+Users can search through their saved reflection history.
+
+### Responsive Interface
+
+MindFlow AI works across:
+
+- Desktop
+- Tablet
+- Mobile
+
+The application includes a responsive mobile sidebar and optimized conversation interface.
+
+### AI Fallback
+
+If Gemini is temporarily unavailable, MindFlow AI provides a safe local fallback response instead of completely breaking the user experience.
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- HTML5
+- CSS3
+- JavaScript
+- Firebase Authentication
+- Marked.js
+- DOMPurify
+- Web Speech API
+
+### Backend
+
+- Node.js
+- Express.js
+- REST APIs
+- MVC architecture
+
+### AI
+
+- Google Gemini API
+- Gemini 3.5 Flash-Lite
+- Google Gen AI SDK
+
+### Google Cloud
+
+- Google Cloud Run
+- Google Cloud Secret Manager
+- Firebase Authentication
+- Cloud Firestore
+
+### DevOps
+
+- Docker
+- Git
+- GitHub
+
+---
+
+## Architecture
 
 ```text
-                    ┌──────────────────────┐
-                    │      User Browser    │
-                    │                      │
-                    │  MindFlow AI UI      │
-                    │  Google Sign-In      │
-                    │  Voice Dictation     │
-                    └──────────┬───────────┘
-                               │
-                               │ Firebase ID Token
-                               ▼
-                    ┌──────────────────────┐
-                    │     Cloud Run        │
-                    │  Express Backend     │
-                    │                      │
-                    │  Auth Verification   │
-                    │  Gemini Integration  │
-                    │  API Endpoints       │
-                    └───────┬───────┬──────┘
-                            │       │
-                ┌───────────┘       └────────────┐
-                ▼                                ▼
-       ┌─────────────────┐              ┌─────────────────┐
-       │    Firestore    │              │   Gemini API    │
-       │                 │              │                 │
-       │ /users/{uid}/   │              │ Reflection      │
-       │ interactions/   │              │ Analysis        │
-       └─────────────────┘              │ Actions         │
-                                        └─────────────────┘
-                                                │
-                                                ▼
-                                      Gemini Model Fallback
+                         User
+                           |
+                           v
+                    Frontend
+               HTML CSS JavaScript
+                           |
+                           v
+                   Express Server
+                       Node.js
+                           |
+          +----------------+----------------+
+          |                |                |
+          v                v                v
+     Controllers       Middleware         Routes
+          |                |                |
+          |          Firebase Auth         |
+          |                                 |
+          +----------------+----------------+
+                           |
+                           v
+                       Services
+                           |
+              +------------+------------+
+              |                         |
+              v                         v
+          Gemini API              Secret Manager
+              |
+              v
+        AI Response
+
+                           |
+                           v
+                       Firestore
+                           |
+                           v
+                 User Reflection Data

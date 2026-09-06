@@ -16,20 +16,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
-// ============================================================================
-// MIDDLEWARE
-// ============================================================================
+const PORT = Number(process.env.PORT) || 8080;
 
-app.use(cors());
+/* Configure cross-origin requests */
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
+/* Parse JSON request bodies */
 app.use(
   express.json({
     limit: "5mb",
   })
 );
 
+/* Parse URL-encoded request bodies */
 app.use(
   express.urlencoded({
     extended: true,
@@ -37,36 +42,26 @@ app.use(
   })
 );
 
-// ============================================================================
-// STATIC FRONTEND
-// ============================================================================
-
+/* Serve the frontend application */
 app.use(
   express.static(
     path.join(__dirname, "public")
   )
 );
 
-// ============================================================================
-// MVC ROUTES
-// ============================================================================
-
-// Health + client configuration
+/* Register health and client configuration routes */
 app.use("/", configRoutes);
 
-// Chat
+/* Register chat routes */
 app.use("/api", chatRoutes);
 
-// AI analysis
+/* Register AI analysis routes */
 app.use("/api", analysisRoutes);
 
-// Interactions
+/* Register interaction routes */
 app.use("/api", interactionRoutes);
 
-// ============================================================================
-// FRONTEND FALLBACK
-// ============================================================================
-
+/* Return the frontend application for client-side routes */
 app.get("*", (req, res) => {
   res.sendFile(
     path.join(
@@ -77,35 +72,26 @@ app.get("*", (req, res) => {
   );
 });
 
-// ============================================================================
-// START SERVER
-// ============================================================================
-
-app.listen(PORT, () => {
+/* Start the application server */
+app.listen(PORT, "0.0.0.0", () => {
   console.log(
     "======================================================="
   );
-
   console.log(
-    `🚀 MindFlow AI running on port ${PORT}`
+    `MindFlow AI running on port ${PORT}`
   );
-
   console.log(
-    "🏗️ Architecture: MVC + Services"
+    "Architecture: MVC + Services"
   );
-
   console.log(
-    "🔐 Firebase Authentication: Enabled"
+    "Firebase Authentication: Configured"
   );
-
   console.log(
-    "🤖 AI Service: Enabled"
+    "AI Service: Configured"
   );
-
   console.log(
-    "🏷️ Cloud Run Label: dev-tutorial=cloud-run-ai-challenge"
+    "Cloud Run: Ready"
   );
-
   console.log(
     "======================================================="
   );

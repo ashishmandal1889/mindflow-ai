@@ -5,12 +5,18 @@ import {
   deleteInteraction,
 } from "../models/interactionModel.js";
 
-/**
- * Create a new reflection/interaction
- */
+/* Create a new reflection */
 async function createInteractionController(req, res) {
   try {
-    const uid = req.user.uid;
+    const uid = req.user?.uid;
+
+    if (!uid) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "User authentication is required.",
+      });
+    }
+
     const body =
       req.body && typeof req.body === "object"
         ? req.body
@@ -27,25 +33,28 @@ async function createInteractionController(req, res) {
     });
   } catch (error) {
     console.error(
-      "[Interaction Create Error]:",
+      "[Interaction Create] Failed:",
       error
     );
 
     return res.status(500).json({
       error: "Create Failed",
-      message:
-        error.message ||
-        "Unable to create reflection.",
+      message: "Unable to create reflection.",
     });
   }
 }
 
-/**
- * Get the current user's reflections
- */
+/* Get the current user's reflections */
 async function getInteractionsController(req, res) {
   try {
-    const uid = req.user.uid;
+    const uid = req.user?.uid;
+
+    if (!uid) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "User authentication is required.",
+      });
+    }
 
     const interactions = await getInteractions(uid);
 
@@ -55,26 +64,29 @@ async function getInteractionsController(req, res) {
     });
   } catch (error) {
     console.error(
-      "[Interaction List Error]:",
+      "[Interaction List] Failed:",
       error
     );
 
     return res.status(500).json({
       error: "Fetch Failed",
-      message:
-        error.message ||
-        "Unable to load reflections.",
+      message: "Unable to load reflections.",
     });
   }
 }
 
-/**
- * Get one reflection
- */
+/* Get one reflection */
 async function getInteractionController(req, res) {
   try {
-    const uid = req.user.uid;
+    const uid = req.user?.uid;
     const { id } = req.params;
+
+    if (!uid) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "User authentication is required.",
+      });
+    }
 
     if (!id) {
       return res.status(400).json({
@@ -101,26 +113,29 @@ async function getInteractionController(req, res) {
     });
   } catch (error) {
     console.error(
-      "[Interaction Get Error]:",
+      "[Interaction Get] Failed:",
       error
     );
 
     return res.status(500).json({
       error: "Fetch Failed",
-      message:
-        error.message ||
-        "Unable to load reflection.",
+      message: "Unable to load reflection.",
     });
   }
 }
 
-/**
- * Delete a reflection
- */
+/* Delete a reflection */
 async function deleteInteractionController(req, res) {
   try {
-    const uid = req.user.uid;
+    const uid = req.user?.uid;
     const { id } = req.params;
+
+    if (!uid) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "User authentication is required.",
+      });
+    }
 
     if (!id) {
       return res.status(400).json({
@@ -129,7 +144,6 @@ async function deleteInteractionController(req, res) {
       });
     }
 
-    // Verify the reflection belongs to this user
     const existing = await getInteraction(
       uid,
       id
@@ -151,15 +165,13 @@ async function deleteInteractionController(req, res) {
     });
   } catch (error) {
     console.error(
-      "[Interaction Delete Error]:",
+      "[Interaction Delete] Failed:",
       error
     );
 
     return res.status(500).json({
       error: "Delete Failed",
-      message:
-        error.message ||
-        "Unable to delete reflection.",
+      message: "Unable to delete reflection.",
     });
   }
 }

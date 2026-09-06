@@ -1,70 +1,89 @@
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
-let cachedApiKey = process.env.GEMINI_API_KEY || null;
+const secretManagerClient =
+  new SecretManagerServiceClient();
 
-async function getGeminiApiKey(requestHeaderKey = null) {
-  // 1. Optional key supplied by request
-  // Kept temporarily for local compatibility.
-  if (
-    requestHeaderKey &&
-    typeof requestHeaderKey === "string" &&
-    requestHeaderKey.trim().length > 10
-  ) {
-    return requestHeaderKey.trim();
-  }
+let cachedGeminiApiKey = null;
 
-  // 2. Cached API key
-  if (cachedApiKey && cachedApiKey.length > 5) {
-    return cachedApiKey;
-  }
-
-  // 3. Google Cloud Secret Manager
-  const projectId =
+/* Get the Google Cloud project ID */
+function getProjectId() {
+  return (
     process.env.GCP_PROJECT_ID ||
-    process.env.GOOGLE_CLOUD_PROJECT;
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    process.env.GCLOUD_PROJECT ||
+    process.env.FIREBASE_PROJECT_ID ||
+    ""
+  ).trim();
+}
 
-  const secretName =
+/* Get the Gemini Secret Manager secret name */
+function getSecretName() {
+  return (
     process.env.GEMINI_SECRET_NAME ||
-    "GEMINI_API_KEY";
+    "gemini-api-key"
+  ).trim();
+}
 
-  if (projectId) {
-    try {
-      console.log(
-        `[SecretManager] Accessing secret '${secretName}' in project '${projectId}'...`
-      );
+/* Get the Gemini API key securely */
+async function getGeminiApiKey() {
+  if (cachedGeminiApiKey) {
+    return cachedGeminiApiKey;
+  }
 
-      const client = new SecretManagerServiceClient();
+  const environmentApiKey =
+    process.env.GEMINI_API_KEY?.trim();
 
-      const [version] = await client.accessSecretVersion({
+  if (environmentApiKey) {
+    cachedGeminiApiKey = environmentApiKey;
+    return cachedGeminiApiKey;
+  }
+
+  const projectId = getProjectId();
+  const secretName = getSecretName();
+
+  if (!projectId) {
+    console.warn(
+      "[Secret Manager] Google Cloud project ID is unavailable."
+    );
+
+    return null;
+  }
+
+  try {
+    const [version] =
+      await secretManagerClient.accessSecretVersion({
         name: `projects/${projectId}/secrets/${secretName}/versions/latest`,
       });
 
-      const secretPayload =
-        version.payload?.data?.toString("utf8");
+    const secret =
+      version?.payload?.data
+        ?.toString("utf8")
+        ?.trim();
 
-      if (secretPayload) {
-        cachedApiKey = secretPayload.trim();
-
-        console.log(
-          "[SecretManager] Secret successfully retrieved and cached."
-        );
-
-        return cachedApiKey;
-      }
-    } catch (err) {
+    if (!secret) {
       console.warn(
-        `[SecretManager] Could not read secret: ${err.message}`
+        "[Secret Manager] Gemini API key is empty."
       );
+
+      return null;
     }
-  }
 
-  // 4. Final environment-variable fallback
-  if (process.env.GEMINI_API_KEY) {
-    cachedApiKey = process.env.GEMINI_API_KEY.trim();
-    return cachedApiKey;
-  }
+    cachedGeminiApiKey = secret;
 
-  return null;
+    console.log(
+      "[Secret Manager] Gemini API key loaded successfully."
+    );
+
+    return cachedGeminiApiKey;
+  } catch (error) {
+    console.warn(
+      "[Secret Manager] Could not load Gemini API key."
+    );
+
+    return null;
+  }
 }
 
-export { getGeminiApiKey };
+export {
+  getGeminiApiKey,
+};

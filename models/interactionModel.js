@@ -1,16 +1,11 @@
-// ============================================================================
-// MINDFLOW AI — INTERACTION MODEL
-// ============================================================================
+// MindFlow AI — Interaction Model
 
 import {
   admin,
   firebaseAdminActive,
 } from "../config/firebase.js";
 
-// ============================================================================
-// FIRESTORE CONNECTION
-// ============================================================================
-
+/* Get the Firestore database instance */
 function getFirestore() {
   if (!firebaseAdminActive) {
     return null;
@@ -19,21 +14,18 @@ function getFirestore() {
   return admin.firestore();
 }
 
-// ============================================================================
-// USER INTERACTIONS COLLECTION
-// ============================================================================
-
+/* Get the authenticated user's interactions collection */
 function getUserInteractionsCollection(uid) {
+  if (!uid || typeof uid !== "string") {
+    throw new Error(
+      "Firebase user ID is required."
+    );
+  }
+
   const db = getFirestore();
 
   if (!db) {
     return null;
-  }
-
-  if (!uid) {
-    throw new Error(
-      "Firebase user ID is required."
-    );
   }
 
   return db
@@ -42,10 +34,7 @@ function getUserInteractionsCollection(uid) {
     .collection("interactions");
 }
 
-// ============================================================================
-// CREATE / UPDATE INTERACTION
-// ============================================================================
-
+/* Create or update a user interaction */
 async function createInteraction(uid, data) {
   const collection =
     getUserInteractionsCollection(uid);
@@ -56,9 +45,19 @@ async function createInteraction(uid, data) {
     );
   }
 
+  if (!data || typeof data !== "object") {
+    throw new Error(
+      "Interaction data is required."
+    );
+  }
+
   const interactionId =
-    data.id ||
-    data.sessionId;
+    typeof data.id === "string" && data.id.trim()
+      ? data.id.trim()
+      : typeof data.sessionId === "string" &&
+        data.sessionId.trim()
+      ? data.sessionId.trim()
+      : null;
 
   if (!interactionId) {
     throw new Error(
@@ -66,23 +65,31 @@ async function createInteraction(uid, data) {
     );
   }
 
+  if (interactionId.length > 1500) {
+    throw new Error(
+      "Interaction ID is too long."
+    );
+  }
+
   const docRef =
     collection.doc(interactionId);
 
+  const interactionData = {
+    ...data,
+
+    id: interactionId,
+    sessionId: interactionId,
+
+    createdAt:
+      data.createdAt ||
+      admin.firestore.FieldValue.serverTimestamp(),
+
+    updatedAt:
+      admin.firestore.FieldValue.serverTimestamp(),
+  };
+
   await docRef.set(
-    {
-      ...data,
-
-      // Keep the document ID and application ID consistent.
-      id: interactionId,
-      sessionId: interactionId,
-
-      createdAt:
-        admin.firestore.FieldValue.serverTimestamp(),
-
-      updatedAt:
-        admin.firestore.FieldValue.serverTimestamp(),
-    },
+    interactionData,
     {
       merge: true,
     }
@@ -93,10 +100,7 @@ async function createInteraction(uid, data) {
   };
 }
 
-// ============================================================================
-// GET ALL USER INTERACTIONS
-// ============================================================================
-
+/* Get all interactions belonging to the authenticated user */
 async function getInteractions(uid) {
   const collection =
     getUserInteractionsCollection(uid);
@@ -112,18 +116,13 @@ async function getInteractions(uid) {
       .orderBy("updatedAt", "desc")
       .get();
 
-  return snapshot.docs.map(
-    (doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })
-  );
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 }
 
-// ============================================================================
-// GET SINGLE INTERACTION
-// ============================================================================
-
+/* Get one interaction belonging to the authenticated user */
 async function getInteraction(
   uid,
   interactionId
@@ -137,7 +136,10 @@ async function getInteraction(
     );
   }
 
-  if (!interactionId) {
+  if (
+    !interactionId ||
+    typeof interactionId !== "string"
+  ) {
     throw new Error(
       "Interaction ID is required."
     );
@@ -158,10 +160,7 @@ async function getInteraction(
   };
 }
 
-// ============================================================================
-// DELETE INTERACTION
-// ============================================================================
-
+/* Delete an interaction belonging to the authenticated user */
 async function deleteInteraction(
   uid,
   interactionId
@@ -175,7 +174,10 @@ async function deleteInteraction(
     );
   }
 
-  if (!interactionId) {
+  if (
+    !interactionId ||
+    typeof interactionId !== "string"
+  ) {
     throw new Error(
       "Interaction ID is required."
     );
@@ -191,8 +193,7 @@ async function deleteInteraction(
     return {
       success: false,
       id: interactionId,
-      message:
-        "Reflection not found.",
+      message: "Reflection not found.",
     };
   }
 
@@ -203,10 +204,6 @@ async function deleteInteraction(
     id: interactionId,
   };
 }
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export {
   createInteraction,

@@ -1,5 +1,4 @@
-import { admin, firebaseAdminActive } from "../config/firebase.js";
-
+/* Authenticate a request using a Firebase ID token */
 async function authenticateFirebaseUser(req, res, next) {
   const authHeader = req.headers.authorization;
 
@@ -11,9 +10,7 @@ async function authenticateFirebaseUser(req, res, next) {
     });
   }
 
-  const idToken = authHeader
-    .split("Bearer ")[1]
-    .trim();
+  const idToken = authHeader.slice("Bearer ".length).trim();
 
   if (!idToken) {
     return res.status(401).json({
@@ -22,73 +19,46 @@ async function authenticateFirebaseUser(req, res, next) {
     });
   }
 
-  // Production: cryptographically verify Firebase ID token
-  if (firebaseAdminActive) {
-    try {
-      const decodedToken =
-        await admin.auth().verifyIdToken(idToken);
+  /* Verify Firebase tokens through Firebase Admin */
+  try {
+    const { admin, firebaseAdminActive } = await import(
+      "../config/firebase.js"
+    );
 
-      req.user = {
-        uid: decodedToken.uid,
-        email: decodedToken.email || "",
-        name:
-          decodedToken.name ||
-          decodedToken.email?.split("@")[0] ||
-          "User",
-      };
+    if (!firebaseAdminActive) {
+      console.error("[Auth] Firebase Admin SDK is not active.");
 
-      return next();
-    } catch (authError) {
-      console.warn(
-        "[Auth Warning] Firebase token verification failed:",
-        authError.message
-      );
-
-      return res.status(401).json({
-        error: "Unauthorized",
+      return res.status(503).json({
+        error: "Authentication unavailable",
         message:
-          "Invalid or expired Firebase authentication token.",
+          "Server authentication is not configured correctly.",
       });
     }
-  }
 
-  // Local development fallback
-  // Extract the Firebase UID from the JWT payload.
-  try {
-    const parts = idToken.split(".");
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
 
-    if (parts.length === 3) {
-      const payload = JSON.parse(
-        Buffer.from(parts[1], "base64").toString("utf-8")
-      );
+    req.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email || "",
+      name:
+        decodedToken.name ||
+        decodedToken.email?.split("@")[0] ||
+        "User",
+    };
 
-      const uid = payload.user_id || payload.sub;
-
-      if (uid && typeof uid === "string") {
-        req.user = {
-          uid,
-          email: payload.email || "",
-          name:
-            payload.name ||
-            payload.email?.split("@")[0] ||
-            "User",
-        };
-
-        return next();
-      }
-    }
-  } catch (error) {
+    return next();
+  } catch (authError) {
     console.warn(
-      "[Auth] Could not decode local Firebase token:",
-      error.message
+      "[Auth] Firebase token verification failed:",
+      authError.message
     );
-  }
 
-  return res.status(401).json({
-    error: "Unauthorized",
-    message:
-      "Invalid token payload. Please sign in with Google.",
-  });
+    return res.status(401).json({
+      error: "Unauthorized",
+      message:
+        "Invalid or expired Firebase authentication token.",
+    });
+  }
 }
 
 export { authenticateFirebaseUser };
